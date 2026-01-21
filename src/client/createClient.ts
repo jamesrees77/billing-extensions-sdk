@@ -165,7 +165,7 @@ export function createBillingExtensionsClient(
    * Fetch status from API
    */
   const fetchStatus = async (): Promise<UserStatus> => {
-    const response = await http.post<UserStatusResponse>("/v1/sdk/user", {});
+    const response = await http.post<UserStatusResponse>("api/v1/sdk/user", {});
     return response;
   };
 
@@ -239,7 +239,7 @@ export function createBillingExtensionsClient(
 
     async openManageBilling(): Promise<void> {
       try {
-        const response = await http.post<SessionResponse>("/v1/sdk/paywall-sessions", {});
+        const response = await http.post<SessionResponse>("api/v1/sdk/paywall-sessions", {});
         await openUrl(response.url);
 
         // Mark that we should refresh on next focus
