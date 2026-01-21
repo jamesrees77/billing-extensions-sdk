@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "BillingExtensions SDK Example",
+  "version": "1.0.0",
+  "description": "Minimal example of using the BillingExtensions SDK",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "BillingExtensions Example"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}
