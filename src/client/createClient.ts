@@ -12,8 +12,8 @@ import { createHttpClient } from "../core/http.js";
 import { computeStatusDiff, hasAnyChange } from "../core/diff.js";
 import { openUrl } from "../core/tabs.js";
 import {
-  getFromSessionStorage,
-  setInSessionStorage,
+  getFromBestStorage,
+  setInBestStorage,
 } from "../core/storage.js";
 import {
   activateAutoSync,
@@ -98,6 +98,11 @@ export function createBillingExtensionsClient(
   };
 
   /**
+   * Get current AutoSync state (for use in listeners)
+   */
+  const getAutoSyncState = (): AutoSyncState => autoSyncState;
+
+  /**
    * Notify all registered handlers of status change
    */
   const notifyHandlers = (next: UserStatus, prev: UserStatus | null) => {
@@ -118,11 +123,11 @@ export function createBillingExtensionsClient(
   };
 
   /**
-   * Load cached status from storage
+   * Load cached status from storage (session preferred, local fallback)
    */
   const loadCachedStatus = async (): Promise<UserStatus | null> => {
     try {
-      const cached = await getFromSessionStorage<CachedStatus>(STATUS_CACHE_KEY);
+      const cached = await getFromBestStorage<CachedStatus>(STATUS_CACHE_KEY);
 
       if (!cached) {
         return null;
@@ -142,7 +147,7 @@ export function createBillingExtensionsClient(
   };
 
   /**
-   * Save status to cache
+   * Save status to cache (session preferred, local fallback)
    */
   const saveCachedStatus = async (status: UserStatus): Promise<void> => {
     try {
@@ -150,7 +155,7 @@ export function createBillingExtensionsClient(
         status,
         fetchedAt: Date.now(),
       };
-      await setInSessionStorage(STATUS_CACHE_KEY, cached);
+      await setInBestStorage(STATUS_CACHE_KEY, cached);
     } catch {
       // Storage errors shouldn't break the SDK
     }
@@ -232,21 +237,9 @@ export function createBillingExtensionsClient(
       }
     },
 
-    async openCheckout(): Promise<void> {
-      try {
-        const response = await http.post<SessionResponse>("/v1/sdk/checkout_session", {});
-        await openUrl(response.url);
-
-        // Mark that we should refresh on next focus
-        markPendingPostActionRefresh(updateAutoSyncState);
-      } catch (error) {
-        throw normalizeError(error);
-      }
-    },
-
     async openManageBilling(): Promise<void> {
       try {
-        const response = await http.post<SessionResponse>("/v1/sdk/portal_session", {});
+        const response = await http.post<SessionResponse>("/v1/sdk/paywall-sessions", {});
         await openUrl(response.url);
 
         // Mark that we should refresh on next focus
@@ -274,7 +267,7 @@ export function createBillingExtensionsClient(
       updateAutoSyncState({ enabled: true });
 
       // Activate if not already activated
-      void activateAutoSync(autoSyncState, autoSyncRefresh, updateAutoSyncState);
+      void activateAutoSync(getAutoSyncState, autoSyncRefresh, updateAutoSyncState);
     },
 
     disableAutoSync(): void {
@@ -288,8 +281,8 @@ export function createBillingExtensionsClient(
   // ═══════════════════════════════════════════════════════════════════════════
 
   // AutoSync is enabled by default - activate it
-  // (will only actually activate in extension UI contexts)
-  void activateAutoSync(autoSyncState, autoSyncRefresh, updateAutoSyncState);
+  // (will only actually activate in extension UI contexts via protocol guard)
+  void activateAutoSync(getAutoSyncState, autoSyncRefresh, updateAutoSyncState);
 
   return client;
 }

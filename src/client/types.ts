@@ -47,8 +47,8 @@ export type UserUsage = {
 export type UserStatus = {
   /** Unique identifier for this extension user */
   extensionUserId: string;
-  /** Whether the user is entitled to use the extension features */
-  entitled: boolean;
+  /** Whether the user has paid to use the extension features */
+  paid: boolean;
   /** Current plan information (if subscribed) */
   plan?: UserPlan;
   /** Current usage information (if applicable) */
@@ -126,15 +126,6 @@ export interface BillingExtensionsClient {
    * @throws BillingExtensionsError
    */
   refresh(): Promise<UserStatus>;
-
-  /**
-   * Open the checkout page for the user to subscribe
-   *
-   * Creates a checkout session via API and opens the URL.
-   *
-   * @throws BillingExtensionsError
-   */
-  openCheckout(): Promise<void>;
 
   /**
    * Open the billing management portal

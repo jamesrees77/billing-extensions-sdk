@@ -72,12 +72,12 @@ function renderStatus(status) {
   showContent();
 
   // Entitlement status
-  if (status.entitled) {
-    entitledStatusEl.textContent = "✓ Entitled";
+  if (status.paid) {
+    entitledStatusEl.textContent = "✓ Paid";
     entitledStatusEl.className = "status-value entitled";
     btnCheckout.classList.add("hidden");
   } else {
-    entitledStatusEl.textContent = "✗ Not Entitled";
+    entitledStatusEl.textContent = "✗ Not Paid";
     entitledStatusEl.className = "status-value not-entitled";
     btnCheckout.classList.remove("hidden");
   }

@@ -110,6 +110,75 @@ export async function setInSessionStorage<T>(key: string, value: T): Promise<voi
 }
 
 /**
+ * Get a value from best available storage (session preferred, local fallback)
+ * Gracefully falls back to local storage if session storage throws
+ */
+export async function getFromBestStorage<T>(key: string): Promise<T | undefined> {
+  // Try session storage first (MV3) with graceful fallback
+  if (isSessionStorageAvailable()) {
+    try {
+      const result = await new Promise<T | undefined>((resolve, reject) => {
+        chrome.storage.session.get([key], (result: { [key: string]: unknown }) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message ?? "Storage read failed"));
+            return;
+          }
+          resolve(result[key] as T | undefined);
+        });
+      });
+      return result;
+    } catch {
+      // Session storage threw, fallback to local
+    }
+  }
+
+  // Fall back to local storage
+  if (isChromeStorageAvailable()) {
+    try {
+      return await getFromLocalStorage<T>(key);
+    } catch {
+      // Local storage also failed, return undefined
+      return undefined;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Set a value in best available storage (session preferred, local fallback)
+ * Gracefully falls back to local storage if session storage throws
+ */
+export async function setInBestStorage<T>(key: string, value: T): Promise<void> {
+  // Try session storage first (MV3) with graceful fallback
+  if (isSessionStorageAvailable()) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        chrome.storage.session.set({ [key]: value }, () => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message ?? "Storage write failed"));
+            return;
+          }
+          resolve();
+        });
+      });
+      return;
+    } catch {
+      // Session storage threw, fallback to local
+    }
+  }
+
+  // Fall back to local storage
+  if (isChromeStorageAvailable()) {
+    try {
+      await setInLocalStorage<T>(key, value);
+    } catch {
+      // Local storage also failed, silently ignore
+    }
+  }
+}
+
+/**
  * Remove a value from session storage
  */
 export async function removeFromSessionStorage(key: string): Promise<void> {

@@ -95,19 +95,21 @@ export function canRefresh(state: AutoSyncState): boolean {
  * @param state - Current AutoSync state
  * @param doRefresh - The actual refresh function to call
  * @param updateState - Function to update state after scheduling
+ * @param force - If true, bypass rate limit (used for post-action refresh)
  */
 export function scheduleRefresh(
   state: AutoSyncState,
   doRefresh: () => Promise<void>,
-  updateState: (updates: Partial<AutoSyncState>) => void
+  updateState: (updates: Partial<AutoSyncState>) => void,
+  force = false
 ): void {
   // Clear existing timer
   if (state.debounceTimer !== null) {
     clearTimeout(state.debounceTimer);
   }
 
-  // Check rate limit
-  if (!canRefresh(state)) {
+  // Check rate limit (unless forced)
+  if (!force && !canRefresh(state)) {
     // Schedule for when rate limit allows
     const waitTime = state.options.minIntervalMs - (Date.now() - state.lastRefreshAt);
     const timer = setTimeout(() => {
@@ -117,10 +119,11 @@ export function scheduleRefresh(
     return;
   }
 
-  // Debounce the refresh
+  // Debounce the refresh (use shorter debounce when forced)
+  const debounceTime = force ? Math.min(state.options.debounceMs, 100) : state.options.debounceMs;
   const timer = setTimeout(() => {
     void executeRefresh(doRefresh, updateState);
-  }, state.options.debounceMs);
+  }, debounceTime);
 
   updateState({ debounceTimer: timer });
 }
@@ -143,13 +146,13 @@ async function executeRefresh(
 /**
  * Set up AutoSync event listeners
  *
- * @param state - Current AutoSync state
+ * @param getState - Function to get current AutoSync state
  * @param doRefresh - The actual refresh function to call
  * @param updateState - Function to update state
  * @returns Cleanup function to remove listeners
  */
 export function setupAutoSyncListeners(
-  state: AutoSyncState,
+  getState: () => AutoSyncState,
   doRefresh: () => Promise<void>,
   updateState: (updates: Partial<AutoSyncState>) => void
 ): () => void {
@@ -160,6 +163,7 @@ export function setupAutoSyncListeners(
     };
   }
 
+  const state = getState();
   const listeners: Array<{ target: EventTarget; event: string; handler: EventListener }> = [];
 
   // Helper to add tracked listeners
@@ -168,16 +172,30 @@ export function setupAutoSyncListeners(
     listeners.push({ target, event, handler });
   };
 
-  // Focus/visibility handler
+  // Focus/visibility handler with post-action refresh support
   if (state.options.refreshOnFocus) {
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        scheduleRefresh(state, doRefresh, updateState);
+        const currentState = getState();
+        if (currentState.pendingPostActionRefresh) {
+          // Force refresh after checkout/billing portal, clear the flag
+          updateState({ pendingPostActionRefresh: false });
+          scheduleRefresh(currentState, doRefresh, updateState, true);
+        } else {
+          scheduleRefresh(currentState, doRefresh, updateState);
+        }
       }
     };
 
     const handleFocus = () => {
-      scheduleRefresh(state, doRefresh, updateState);
+      const currentState = getState();
+      if (currentState.pendingPostActionRefresh) {
+        // Force refresh after checkout/billing portal, clear the flag
+        updateState({ pendingPostActionRefresh: false });
+        scheduleRefresh(currentState, doRefresh, updateState, true);
+      } else {
+        scheduleRefresh(currentState, doRefresh, updateState);
+      }
     };
 
     addListener(document, "visibilitychange", handleVisibility);
@@ -187,7 +205,8 @@ export function setupAutoSyncListeners(
   // Online handler
   if (state.options.refreshOnOnline) {
     const handleOnline = () => {
-      scheduleRefresh(state, doRefresh, updateState);
+      const currentState = getState();
+      scheduleRefresh(currentState, doRefresh, updateState);
     };
 
     addListener(window, "online", handleOnline);
@@ -201,8 +220,9 @@ export function setupAutoSyncListeners(
     listeners.length = 0;
 
     // Clear any pending timer
-    if (state.debounceTimer !== null) {
-      clearTimeout(state.debounceTimer);
+    const currentState = getState();
+    if (currentState.debounceTimer !== null) {
+      clearTimeout(currentState.debounceTimer);
       updateState({ debounceTimer: null });
     }
   };
@@ -211,11 +231,13 @@ export function setupAutoSyncListeners(
 /**
  * Activate AutoSync (call once on init)
  */
-export async function activateAutoSync(
-  state: AutoSyncState,
+export function activateAutoSync(
+  getState: () => AutoSyncState,
   doRefresh: () => Promise<void>,
   updateState: (updates: Partial<AutoSyncState>) => void
-): Promise<void> {
+): void {
+  const state = getState();
+
   // Don't activate if disabled
   if (!state.enabled) {
     return;
@@ -232,7 +254,7 @@ export async function activateAutoSync(
   }
 
   // Set up listeners
-  const cleanup = setupAutoSyncListeners(state, doRefresh, updateState);
+  const cleanup = setupAutoSyncListeners(getState, doRefresh, updateState);
   updateState({ activated: true, cleanup });
 
   // Initial refresh if enabled

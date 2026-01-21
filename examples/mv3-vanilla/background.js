@@ -44,7 +44,7 @@ async function checkEntitlement() {
 
   try {
     const status = await client.getUser();
-    return status.entitled;
+    return status.paid;
   } catch (error) {
     console.error("Failed to check entitlement:", error);
     return false;
@@ -58,8 +58,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "CHECK_ENTITLEMENT") {
     // Handle async response
     checkEntitlement()
-      .then((entitled) => {
-        sendResponse({ entitled });
+      .then((paid) => {
+        sendResponse({ paid });
       })
       .catch((error) => {
         sendResponse({ error: error.message });

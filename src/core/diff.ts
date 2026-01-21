@@ -22,7 +22,7 @@ export function computeStatusDiff(prev: UserStatus | null, next: UserStatus): St
  */
 function computeEntitlementChanged(prev: UserStatus | null, next: UserStatus): boolean {
   if (prev === null) return true;
-  return prev.entitled !== next.entitled;
+  return prev.paid !== next.paid;
 }
 
 /**
