@@ -142,6 +142,16 @@ export async function httpRequest<T>(
       return handleErrorResponse(response);
     }
 
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      const text = await response.text().catch(() => "");
+      throw createApiError(
+        response.status,
+        `Expected JSON but got "${contentType}". First 200 chars: ${text.slice(0, 200)}`
+      );
+    }
+
     // Parse successful response
     const data: unknown = await response.json();
     return data as T;

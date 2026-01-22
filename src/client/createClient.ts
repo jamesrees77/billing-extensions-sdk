@@ -388,6 +388,20 @@ const enableBackgroundStatusTracking = (opts?: { periodInMinutes?: number }): vo
     onStatusChanged(handler: StatusChangeHandler): () => void {
       handlers.add(handler);
 
+      // Immediately notify with current status if available
+      // This ensures new subscribers don't miss updates from in-flight SWR
+      if (currentStatus !== null) {
+        try {
+          handler(currentStatus, null, {
+            entitlementChanged: true,
+            planChanged: currentStatus.plan != null,
+            usageChanged: currentStatus.usage != null,
+          });
+        } catch {
+          // Don't let handler errors break the SDK
+        }
+      }
+
       return () => {
         handlers.delete(handler);
       };
