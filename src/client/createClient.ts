@@ -48,6 +48,9 @@ const CHECKOUT_RETURN_MESSAGE = "BILLINGEXTENSIONS_CHECKOUT_RETURNED";
 const DEFAULT_BG_ALARM_NAME = "billingextensions_status_tracking";
 const DEFAULT_BG_POLL_MINUTES = 1;
 
+const LAST_SWR_AT_KEY = "billingextensions_last_swr_at";
+const SWR_COOLDOWN_MS = 5_000;
+
 /**
  * API response types
  */
@@ -217,16 +220,52 @@ attachStorageStatusListener();
     return next;
   };
 
-  /**
-   * Wrapper for AutoSync refresh (doesn't throw)
-   */
-  const autoSyncRefresh = async (): Promise<void> => {
+/**
+ * Wrapper for AutoSync refresh (doesn't throw) + dedupes in-flight requests
+ */
+let refreshInFlight: Promise<void> | null = null;
+
+const autoSyncRefresh = async (): Promise<void> => {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
     try {
       await doRefresh();
     } catch {
       // AutoSync errors are silent
+    } finally {
+      refreshInFlight = null;
     }
-  };
+  })();
+
+  return refreshInFlight;
+};
+
+let swrCheckInFlight: Promise<void> | null = null;
+
+const schedulePaidSWRRevalidate = (): void => {
+  // avoid stacking multiple storage reads in a single popup open
+  if (swrCheckInFlight) return;
+
+  swrCheckInFlight = (async () => {
+    try {
+      const last = (await getFromBestStorage<number>(LAST_SWR_AT_KEY)) ?? 0;
+      const now = Date.now();
+
+      if (now - last < SWR_COOLDOWN_MS) return;
+
+      // persist before refresh so rapid reopens don't spam
+      await setInBestStorage(LAST_SWR_AT_KEY, now);
+
+      // silent refresh (deduped)
+      await autoSyncRefresh();
+    } catch {
+      // ignore: storage failures shouldn't break UX
+    } finally {
+      swrCheckInFlight = null;
+    }
+  })();
+};
 
   // Background tracking state (per client instance)
 let backgroundTrackingEnabled = false;
@@ -300,6 +339,12 @@ const enableBackgroundStatusTracking = (opts?: { periodInMinutes?: number }): vo
           const cached = await loadCachedStatus();
           if (cached !== null) {
             currentStatus = cached;
+          
+            // SWR only when cache says paid (fixes paid->unpaid needing 2 opens)
+            if (cached.paid === true) {
+              schedulePaidSWRRevalidate();
+            }
+          
             return cached;
           }
         }
@@ -307,6 +352,15 @@ const enableBackgroundStatusTracking = (opts?: { periodInMinutes?: number }): vo
         // Fetch from API
         return await doRefresh();
       } catch (error) {
+        const e = error as any;
+
+        console.error("[BillingExtensionsSDK] getUser failed");
+        console.error("type:", e?.type);
+        console.error("message:", e?.message);
+      
+        // If your errors sometimes include extra fields:
+        console.error("full error object:", e);
+      
         throw normalizeError(error);
       }
     },

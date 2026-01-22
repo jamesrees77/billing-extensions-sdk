@@ -33,6 +33,15 @@ function getApiOrigin(): string {
   return API_ORIGIN;
 }
 
+function isNgrokOrigin(origin: string): boolean {
+  try {
+    const host = new URL(origin).host;
+    return host.includes("ngrok");
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Default request timeout in milliseconds
  */
@@ -96,6 +105,11 @@ export async function httpRequest<T>(
     "X-Extension-User-Id": extensionUserId,
     "X-SDK-Version": getSDKVersion(),
   };
+
+    // Ngrok: skip the browser warning/interstitial (prevents HTML responses)
+    if (isNgrokOrigin(getApiOrigin())) {
+      headers["ngrok-skip-browser-warning"] = "true";
+    }
 
   // Add extension ID if available
   const extensionId = getExtensionId();
