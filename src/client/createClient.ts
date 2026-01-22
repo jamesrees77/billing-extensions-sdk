@@ -44,6 +44,10 @@ const STATUS_CACHE_KEY = "billingextensions_status_cache";
  */
 const DEFAULT_CACHE_TTL_MS = 30_000;
 
+const CHECKOUT_RETURN_MESSAGE = "BILLINGEXTENSIONS_CHECKOUT_RETURNED";
+const DEFAULT_BG_ALARM_NAME = "billingextensions_status_tracking";
+const DEFAULT_BG_POLL_MINUTES = 1;
+
 /**
  * API response types
  */
@@ -122,6 +126,31 @@ export function createBillingExtensionsClient(
     }
   };
 
+  let storageListenerAttached = false;
+
+const attachStorageStatusListener = () => {
+  if (storageListenerAttached) return;
+  if (typeof chrome === "undefined" || !chrome.storage?.onChanged) return;
+
+  storageListenerAttached = true;
+
+  chrome.storage.onChanged.addListener((changes) => {
+    const change = changes[STATUS_CACHE_KEY];
+    if (!change?.newValue) return;
+
+    const cached = change.newValue as CachedStatus;
+    if (!cached?.status) return;
+
+    const prev = currentStatus;
+    const next = cached.status;
+
+    currentStatus = next;
+    notifyHandlers(next, prev);
+  });
+};
+
+attachStorageStatusListener();
+
   /**
    * Load cached status from storage (session preferred, local fallback)
    */
@@ -165,7 +194,7 @@ export function createBillingExtensionsClient(
    * Fetch status from API
    */
   const fetchStatus = async (): Promise<UserStatus> => {
-    const response = await http.post<UserStatusResponse>("api/v1/sdk/user", {});
+    const response = await http.get<UserStatusResponse>("api/v1/sdk/user");
     return response;
   };
 
@@ -198,6 +227,59 @@ export function createBillingExtensionsClient(
       // AutoSync errors are silent
     }
   };
+
+  // Background tracking state (per client instance)
+let backgroundTrackingEnabled = false;
+let alarmListenerAttached = false;
+let messageListenerAttached = false;
+
+/**
+ * Enable background status tracking.
+ * - Always listens for a content-script "checkout returned" message (instant refresh)
+ * - Optionally enables chrome.alarms polling if available/allowed (no hard requirement)
+ */
+const enableBackgroundStatusTracking = (opts?: { periodInMinutes?: number }): void => {
+  if (backgroundTrackingEnabled) return;
+  backgroundTrackingEnabled = true;
+
+  const periodInMinutes = opts?.periodInMinutes ?? DEFAULT_BG_POLL_MINUTES;
+
+  // 1) Instant refresh trigger via message (works without alarms)
+  if (typeof chrome !== "undefined" && chrome.runtime?.onMessage && !messageListenerAttached) {
+    messageListenerAttached = true;
+
+    chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+      if (msg?.type === CHECKOUT_RETURN_MESSAGE) {
+        void autoSyncRefresh(); // silently refresh + write cache + notify
+        sendResponse?.({ ok: true });
+        return true;
+      }
+      return false;
+    });
+  }
+
+  // 2) Optional polling via alarms (only if permission/API exists)
+  if (typeof chrome !== "undefined" && chrome.alarms?.create && chrome.alarms?.onAlarm) {
+    try {
+      chrome.alarms.create(DEFAULT_BG_ALARM_NAME, { periodInMinutes });
+    } catch {
+      // likely missing "alarms" permission — ignore
+    }
+
+    if (!alarmListenerAttached) {
+      alarmListenerAttached = true;
+
+      chrome.alarms.onAlarm.addListener((alarm) => {
+        if (alarm.name === DEFAULT_BG_ALARM_NAME) {
+          void autoSyncRefresh();
+        }
+      });
+    }
+  }
+
+  // 3) Kick once so cache is warm
+  void autoSyncRefresh();
+};
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Public API
@@ -239,7 +321,7 @@ export function createBillingExtensionsClient(
 
     async openManageBilling(): Promise<void> {
       try {
-        const response = await http.post<SessionResponse>("api/v1/sdk/paywall-sessions", {});
+        const response = await http.get<SessionResponse>("api/v1/sdk/paywall-sessions");
         await openUrl(response.url);
 
         // Mark that we should refresh on next focus
@@ -268,6 +350,10 @@ export function createBillingExtensionsClient(
 
       // Activate if not already activated
       void activateAutoSync(getAutoSyncState, autoSyncRefresh, updateAutoSyncState);
+    },
+
+    enableBackgroundStatusTracking(opts?: { periodInMinutes?: number }): void {
+      enableBackgroundStatusTracking(opts);
     },
 
     disableAutoSync(): void {

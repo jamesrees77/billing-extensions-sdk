@@ -1,17 +1,68 @@
 import { defineConfig } from "tsup";
 
-export default defineConfig({
-  entry: ["src/index.ts"],
-  format: ["esm", "cjs"],
-  dts: true,
-  splitting: false,
-  sourcemap: true,
-  clean: true,
-  treeshake: true,
-  minify: false,
-  target: "es2022",
-  outDir: "dist",
-  define: {
-    __SDK_VERSION__: JSON.stringify(process.env.npm_package_version || "0.2.0"),
+const define = {
+  __SDK_VERSION__: JSON.stringify(process.env.npm_package_version || "0.2.0"),
+  __DEV_API_ORIGIN__: JSON.stringify("https://798033d3564a.ngrok-free.app/"), 
+};
+
+export default defineConfig([
+  // 1) Normal package build (npm)
+  {
+    entry: ["src/index.ts"],
+    format: ["esm", "cjs"],
+    dts: true,
+    splitting: false,
+    sourcemap: true,
+    clean: true,
+    treeshake: true,
+    minify: false,
+    target: "es2022",
+    outDir: "dist",
+    define,
   },
-});
+
+  // 2) Drop-in MV3 build (IIFE) -> dist/BillingExtensionsSDK.js
+  {
+    entry: { BillingExtensionsSDK: "src/index.ts" },
+    format: ["iife"],
+    splitting: false,
+    sourcemap: true,
+    clean: false,
+    treeshake: true,
+    minify: false,
+    target: "es2019",
+    outDir: "dist",
+    globalName: "BillingExtensionsSDK",
+    define,
+    outExtension: () => ({ js: ".js" }),
+  },
+
+  // 3) Named ESM module build -> dist/BillingExtensionsSDK.module.js
+  {
+    entry: { BillingExtensionsSDK: "src/index.ts" },
+    format: ["esm"],
+    splitting: false,
+    sourcemap: true,
+    clean: false,
+    treeshake: true,
+    minify: false,
+    target: "es2022",
+    outDir: "dist",
+    define,
+    outExtension: () => ({ js: ".module.js" }),
+  },
+    // 4) Content script build (optional “instant” signal) -> dist/BillingExtensionsSDK.content.js
+    {
+        entry: { "BillingExtensionsSDK.content": "src/content/checkout-return-listener.ts" },
+        format: ["iife"],
+        splitting: false,
+        sourcemap: false,
+        clean: false,
+        treeshake: true,
+        minify: true,
+        target: "es2019",
+        outDir: "dist",
+        define,
+        outExtension: () => ({ js: ".js" }),
+      },
+]);

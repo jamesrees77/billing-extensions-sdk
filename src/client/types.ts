@@ -155,6 +155,8 @@ export interface BillingExtensionsClient {
    */
   enableAutoSync(opts?: AutoSyncOptions): void;
 
+  enableBackgroundStatusTracking(opts?: { periodInMinutes?: number }): void;
+
   /**
    * Disable AutoSync
    */
