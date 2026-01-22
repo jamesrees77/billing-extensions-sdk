@@ -30,16 +30,16 @@ function computeEntitlementChanged(prev: UserStatus | null, next: UserStatus): b
  * Compares: id, nickname, status, currentPeriodEnd
  */
 function computePlanChanged(prev: UserStatus | null, next: UserStatus): boolean {
-  if (prev === null) return next.plan !== undefined;
+  if (prev === null) return next.plan !== undefined && next.plan !== null;
 
   const prevPlan = prev.plan;
   const nextPlan = next.plan;
 
-  // Both undefined - no change
-  if (prevPlan === undefined && nextPlan === undefined) return false;
+  // Both undefined or null - no change
+  if ((prevPlan === undefined || prevPlan === null) && (nextPlan === undefined || nextPlan === null)) return false;
 
-  // One undefined, one not - changed
-  if (prevPlan === undefined || nextPlan === undefined) return true;
+  // One undefined/null, one not - changed
+  if (prevPlan === undefined || prevPlan === null || nextPlan === undefined || nextPlan === null) return true;
 
   // Compare all plan fields
   return (
@@ -55,16 +55,16 @@ function computePlanChanged(prev: UserStatus | null, next: UserStatus): boolean 
  * Compares: used, limit, resetsAt
  */
 function computeUsageChanged(prev: UserStatus | null, next: UserStatus): boolean {
-  if (prev === null) return next.usage !== undefined;
+  if (prev === null) return next.usage !== undefined && next.usage !== null;
 
   const prevUsage = prev.usage;
   const nextUsage = next.usage;
 
-  // Both undefined - no change
-  if (prevUsage === undefined && nextUsage === undefined) return false;
+  // Both undefined or null - no change
+  if ((prevUsage === undefined || prevUsage === null) && (nextUsage === undefined || nextUsage === null)) return false;
 
-  // One undefined, one not - changed
-  if (prevUsage === undefined || nextUsage === undefined) return true;
+  // One undefined/null, one not - changed
+  if (prevUsage === undefined || prevUsage === null || nextUsage === undefined || nextUsage === null) return true;
 
   // Compare all usage fields
   return (
