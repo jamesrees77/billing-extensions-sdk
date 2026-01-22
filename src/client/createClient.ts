@@ -381,7 +381,7 @@ const enableBackgroundStatusTracking = (opts?: { periodInMinutes?: number }): vo
 
     async openManageBilling(): Promise<void> {
       try {
-        const response = await http.get<SessionResponse>("api/v1/sdk/paywall-sessions");
+        const response = await http.post<SessionResponse>("api/v1/sdk/paywall-sessions");
         await openUrl(response.url);
 
         // Mark that we should refresh on next focus

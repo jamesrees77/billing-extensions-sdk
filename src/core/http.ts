@@ -144,11 +144,20 @@ export async function httpRequest<T>(
 
 
     const contentType = response.headers.get("content-type") || "";
-    if (!contentType.includes("application/json")) {
+    if (!contentType.toLowerCase().includes("application/json")) {
+      // Try to capture something meaningful for debugging
       const text = await response.text().catch(() => "");
+      const snippet = text.replace(/\s+/g, " ").slice(0, 200);
+    
+      // Use ApiError to preserve status, but include method/url + content-type
       throw createApiError(
         response.status,
-        `Expected JSON but got "${contentType}". First 200 chars: ${text.slice(0, 200)}`
+        [
+          `Expected JSON but got "${contentType || "unknown"}".`,
+          `method=${method}`,
+          `url=${url}`,
+          `snippet="${snippet}"`,
+        ].join(" ")
       );
     }
 
