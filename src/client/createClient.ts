@@ -144,7 +144,11 @@ const attachStorageStatusListener = () => {
     const cached = change.newValue as CachedStatus;
     if (!cached?.status) return;
 
-    const prev = currentStatus;
+    // Use the storage change's oldValue for prev, not currentStatus.
+    // This ensures we get the actual previous value even if doRefresh()
+    // already updated currentStatus in-memory before this listener fired.
+    const oldCached = change.oldValue as CachedStatus | undefined;
+    const prev = oldCached?.status ?? null;
     const next = cached.status;
 
     currentStatus = next;
@@ -203,19 +207,20 @@ attachStorageStatusListener();
 
   /**
    * Core refresh implementation
+   * 
+   * Note: We don't call notifyHandlers() here because saveCachedStatus() writes
+   * to chrome.storage, which triggers the storage.onChanged listener. That listener
+   * is the single source of truth for notifying handlers - this ensures all tabs
+   * get notified consistently and we don't get duplicate notifications.
    */
   const doRefresh = async (): Promise<UserStatus> => {
-    const prev = currentStatus;
     const next = await fetchStatus();
 
     // Update current status
     currentStatus = next;
 
-    // Cache the new status
+    // Cache the new status - this triggers storage.onChanged which notifies handlers
     await saveCachedStatus(next);
-
-    // Notify handlers
-    notifyHandlers(next, prev);
 
     return next;
   };
