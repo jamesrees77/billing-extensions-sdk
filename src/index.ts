@@ -26,6 +26,9 @@ export type {
   UserPlan,
   UserUsage,
 
+  // Plans
+  PlanForSDK,
+
   // Change Detection
   StatusDiff,
   StatusChangeHandler,

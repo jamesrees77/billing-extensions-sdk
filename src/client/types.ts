@@ -30,6 +30,26 @@ export type UserPlan = {
 };
 
 /**
+ * Plan information returned by the SDK plans endpoint
+ */
+export type PlanForSDK = {
+  /** Plan ID */
+  id: string;
+  /** Human-readable plan name */
+  name: string;
+  /** Price amount in smallest currency unit (e.g., cents) */
+  priceAmount: number;
+  /** Currency code (e.g., "usd") */
+  currency: string;
+  /** Billing type (e.g., "recurring", "one_time") */
+  billingType: string;
+  /** Billing interval (e.g., "month", "year") - null for one-time */
+  interval: string | null;
+  /** Number of intervals between billings */
+  intervalCount: number;
+};
+
+/**
  * User usage information
  */
 export type UserUsage = {
@@ -161,6 +181,16 @@ export interface BillingExtensionsClient {
    * Disable AutoSync
    */
   disableAutoSync(): void;
+
+  /**
+   * Get available plans
+   *
+   * Fetches the list of available plans from the API.
+   *
+   * @returns Promise resolving to an array of plans
+   * @throws BillingExtensionsError
+   */
+  getPlans(): Promise<PlanForSDK[]>;
 }
 
 /**

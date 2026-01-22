@@ -30,6 +30,7 @@ import type {
   BillingExtensionsClientConfig,
   CachedStatus,
   GetUserOptions,
+  PlanForSDK,
   StatusChangeHandler,
   UserStatus,
 } from "./types.js";
@@ -432,6 +433,15 @@ const enableBackgroundStatusTracking = (opts?: { periodInMinutes?: number }): vo
     disableAutoSync(): void {
       updateAutoSyncState({ enabled: false });
       deactivateAutoSync(autoSyncState, updateAutoSyncState);
+    },
+
+    async getPlans(): Promise<PlanForSDK[]> {
+      try {
+        const response = await http.get<PlanForSDK[]>("api/v1/sdk/plans");
+        return response;
+      } catch (error) {
+        throw normalizeError(error);
+      }
     },
   };
 
