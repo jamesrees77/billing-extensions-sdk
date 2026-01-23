@@ -1,101 +1,94 @@
-/**
- * BillingExtensions SDK Error Types
- *
- * All SDK methods throw only these typed errors - never random/unknown errors.
- */
+export type BillingExtensionsErrorType =
+  | "ConfigError"
+  | "RuntimeError"
+  | "NetworkError"
+  | "Unauthorized"
+  | "ApiError";
 
-export type BillingExtensionsError =
-  | { type: "ConfigError"; message: string }
-  | { type: "RuntimeError"; message: string }
-  | { type: "NetworkError"; message: string }
-  | { type: "Unauthorized"; message: string }
-  | { type: "ApiError"; status: number; code?: string; message: string };
+export class BillingExtensionsError extends Error {
+  type: BillingExtensionsErrorType;
+  status?: number;
+  code?: string;
 
-/**
- * Type guard to check if an error is a BillingExtensionsError
- */
+  constructor(
+    type: BillingExtensionsErrorType,
+    message: string,
+    opts?: { status?: number; code?: string; cause?: unknown }
+  ) {
+    super(message, opts?.cause ? ({ cause: opts.cause } as any) : undefined);
+
+    this.type = type;
+
+    if (opts?.status !== undefined) this.status = opts.status;
+    if (opts?.code !== undefined) this.code = opts.code;
+
+    Object.setPrototypeOf(this, new.target.prototype);
+    this.name = "BillingExtensionsError";
+  }
+}
+
 export function isBillingExtensionsError(error: unknown): error is BillingExtensionsError {
-  if (typeof error !== "object" || error === null) return false;
-  const e = error as Record<string, unknown>;
-  return (
-    typeof e["type"] === "string" &&
-    ["ConfigError", "RuntimeError", "NetworkError", "Unauthorized", "ApiError"].includes(
-      e["type"] as string
-    ) &&
-    typeof e["message"] === "string"
-  );
+  return error instanceof BillingExtensionsError;
 }
 
-/**
- * Create a ConfigError
- */
-export function createConfigError(message: string): BillingExtensionsError {
-  return { type: "ConfigError", message };
+export function createConfigError(message: string) {
+  return new BillingExtensionsError("ConfigError", message);
 }
 
-/**
- * Create a RuntimeError
- */
-export function createRuntimeError(message: string): BillingExtensionsError {
-  return { type: "RuntimeError", message };
+export function createRuntimeError(message: string, cause?: unknown) {
+  return new BillingExtensionsError("RuntimeError", message, { cause });
 }
 
-/**
- * Create a NetworkError
- */
-export function createNetworkError(message: string): BillingExtensionsError {
-  return { type: "NetworkError", message };
+export function createNetworkError(message: string, cause?: unknown) {
+  return new BillingExtensionsError("NetworkError", message, { cause });
 }
 
-/**
- * Create an Unauthorized error
- */
-export function createUnauthorizedError(message: string): BillingExtensionsError {
-  return { type: "Unauthorized", message };
+export function createUnauthorizedError(message: string, cause?: unknown) {
+  return new BillingExtensionsError("Unauthorized", message, { status: 401, cause });
 }
 
-/**
- * Create an ApiError
- */
 export function createApiError(
   status: number,
   message: string,
-  code?: string
-): BillingExtensionsError {
-  return code !== undefined
-    ? { type: "ApiError", status, code, message }
-    : { type: "ApiError", status, message };
+  code?: string,
+  cause?: unknown
+) {
+  const opts: { status?: number; code?: string; cause?: unknown } = { status, cause };
+
+  if (code !== undefined) opts.code = code;
+
+  return new BillingExtensionsError("ApiError", message, opts);
 }
 
-/**
- * Normalize any unknown error into a BillingExtensionsError
- */
 export function normalizeError(error: unknown): BillingExtensionsError {
-  // Already a BillingExtensionsError
-  if (isBillingExtensionsError(error)) {
-    return error;
-  }
+  if (error instanceof BillingExtensionsError) return error;
 
-  // Standard Error object
   if (error instanceof Error) {
-    // Network-related errors
+    if (error.name === "AbortError") {
+      return createNetworkError("Request was aborted", error);
+    }
+
     if (
       error.name === "TypeError" &&
-      (error.message.includes("fetch") || error.message.includes("network"))
+      (error.message.toLowerCase().includes("fetch") ||
+        error.message.toLowerCase().includes("network"))
     ) {
-      return createNetworkError(error.message);
+      return createNetworkError(error.message, error);
     }
-    if (error.name === "AbortError") {
-      return createNetworkError("Request was aborted");
-    }
-    return createRuntimeError(error.message);
+
+    return createRuntimeError(error.message || "An unknown error occurred", error);
   }
 
-  // String error
   if (typeof error === "string") {
     return createRuntimeError(error);
   }
 
-  // Unknown error type
-  return createRuntimeError("An unknown error occurred");
+  // This is your #<Object> case — capture something
+  let msg = "An unknown error occurred";
+  try {
+    msg = typeof error === "object" ? JSON.stringify(error) : String(error);
+  } catch {
+    // ignore
+  }
+  return createRuntimeError(msg, error);
 }

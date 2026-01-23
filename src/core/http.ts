@@ -95,6 +95,7 @@ export async function httpRequest<T>(
 
   // Build URL
   const url = `${getApiOrigin()}${path}`;
+  
 
   // Build headers
   const headers: Record<string, string> = {
