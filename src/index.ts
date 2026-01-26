@@ -23,11 +23,12 @@ export type {
 
   // User Status
   UserStatus,
-  UserPlan,
-  UserUsage,
 
   // Plans
   PlanForSDK,
+
+  // Paywall Session
+  PaywallSessionResponse,
 
   // Change Detection
   StatusDiff,

@@ -30,6 +30,7 @@ import type {
   BillingExtensionsClientConfig,
   CachedStatus,
   GetUserOptions,
+  PaywallSessionResponse,
   PlanForSDK,
   StatusChangeHandler,
   UserStatus,
@@ -57,9 +58,6 @@ const SWR_COOLDOWN_MS = 5_000;
  */
 type UserStatusResponse = UserStatus;
 
-type SessionResponse = {
-  url: string;
-};
 
 /**
  * Validate client configuration
@@ -381,9 +379,8 @@ const enableBackgroundStatusTracking = (opts?: { periodInMinutes?: number }): vo
 
     async openManageBilling(): Promise<void> {
       try {
-        const response = await http.post<SessionResponse>("api/v1/sdk/paywall-sessions");
-        console.log("[BillingExtensionsSDK] paywall session response:", response);
-console.log("[BillingExtensionsSDK] paywall session url:", response?.url, typeof response?.url);
+        const response = await http.post<PaywallSessionResponse>("api/v1/sdk/paywall-sessions");
+
         await openUrl(response.url);
 
         // Mark that we should refresh on next focus

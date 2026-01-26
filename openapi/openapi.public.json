@@ -1,0 +1,615 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Charge Extensions Developer API",
+    "description": "API for managing browser extension monetization. Authenticate with your secret key via Bearer token.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.charge-extensions.com",
+      "description": "Production"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/apps": {
+      "get": {
+        "operationId": "listApps",
+        "summary": "List all apps",
+        "description": "Returns all apps owned by the authenticated developer.",
+        "tags": ["Apps"],
+        "responses": {
+          "200": {
+            "description": "List of apps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/apps/{appId}/plans": {
+      "get": {
+        "operationId": "listPlans",
+        "summary": "List plans for an app",
+        "description": "Returns all active plans for the specified app.",
+        "tags": ["Plans"],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The app ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of plans",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlansResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - app not owned by developer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "App not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/apps/{appId}/users/{extensionUserId}": {
+      "get": {
+        "operationId": "getUser",
+        "summary": "Get user status",
+        "description": "Returns the paid status and subscription info for an end user.",
+        "tags": ["Users"],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The app ID"
+          },
+          {
+            "name": "extensionUserId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The extension user ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - app not owned by developer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "App not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/apps/{appId}/users/{extensionUserId}/payments": {
+      "get": {
+        "operationId": "listPayments",
+        "summary": "List payments for a user",
+        "description": "Returns all payments for the specified end user.",
+        "tags": ["Payments"],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The app ID"
+          },
+          {
+            "name": "extensionUserId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The extension user ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of payments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - app not owned by developer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "App not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/apps/{appId}/users/{extensionUserId}/subscriptions": {
+      "get": {
+        "operationId": "listSubscriptions",
+        "summary": "List subscriptions for a user",
+        "description": "Returns all subscriptions for the specified end user.",
+        "tags": ["Subscriptions"],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The app ID"
+          },
+          {
+            "name": "extensionUserId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The extension user ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of subscriptions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - app not owned by developer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "App not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret key authentication (sk_...)"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        }
+      },
+      "UserPlan": {
+        "type": "object",
+        "description": "Minimal plan info returned in user status",
+        "required": ["id", "name"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "UserStatus": {
+        "type": "object",
+        "description": "User subscription status (shared: SDK + Developer API)",
+        "required": ["extensionUserId", "paid", "subscriptionStatus", "plan", "currentPeriodEnd", "cancelAtPeriodEnd"],
+        "properties": {
+          "extensionUserId": {
+            "type": "string"
+          },
+          "paid": {
+            "type": "boolean",
+            "description": "Whether the user has an active paid subscription"
+          },
+          "subscriptionStatus": {
+            "type": "string",
+            "description": "Subscription status: none, active, trialing, past_due, canceled, etc."
+          },
+          "plan": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/UserPlan" },
+              { "type": "null" }
+            ],
+            "description": "Current plan info, or null if no subscription"
+          },
+          "currentPeriodEnd": {
+            "type": ["string", "null"],
+            "format": "date-time",
+            "description": "End of current billing period (ISO 8601)"
+          },
+          "cancelAtPeriodEnd": {
+            "type": "boolean",
+            "description": "Whether the subscription will cancel at period end"
+          }
+        }
+      },
+      "Plan": {
+        "type": "object",
+        "description": "Plan details (shared: SDK + Developer API)",
+        "required": ["id", "name", "priceAmount", "currency", "billingType", "interval", "intervalCount"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "priceAmount": {
+            "type": "number",
+            "description": "Price in smallest currency unit (e.g., cents)"
+          },
+          "currency": {
+            "type": "string",
+            "description": "ISO 4217 currency code (e.g., usd)"
+          },
+          "billingType": {
+            "type": "string",
+            "description": "Billing type: one_time or recurring"
+          },
+          "interval": {
+            "type": ["string", "null"],
+            "description": "Billing interval: month, year, etc. (null for one_time)"
+          },
+          "intervalCount": {
+            "type": "number",
+            "description": "Number of intervals between billings"
+          }
+        }
+      },
+      "PlansResponse": {
+        "type": "object",
+        "description": "Plans list response (shared: SDK + Developer API)",
+        "required": ["plans"],
+        "properties": {
+          "plans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Plan"
+            }
+          }
+        }
+      },
+      "App": {
+        "type": "object",
+        "description": "App details (Developer API only)",
+        "required": ["id", "extensionName", "extensionIdentifier", "store", "publicKey", "createdAt", "updatedAt"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "extensionName": {
+            "type": "string"
+          },
+          "extensionIdentifier": {
+            "type": "string"
+          },
+          "store": {
+            "type": "string",
+            "description": "Extension store: chrome, firefox, etc."
+          },
+          "publicKey": {
+            "type": ["string", "null"],
+            "description": "Public key for SDK authentication"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AppsResponse": {
+        "type": "object",
+        "description": "Apps list response (Developer API only)",
+        "required": ["apps"],
+        "properties": {
+          "apps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/App"
+            }
+          }
+        }
+      },
+      "Payment": {
+        "type": "object",
+        "description": "Payment details (Developer API only)",
+        "required": ["id", "amountPaid", "currency", "status", "paymentType", "paidAt", "subscriptionId", "stripeInvoiceId", "stripePaymentIntentId", "stripeChargeId", "platformFee"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "amountPaid": {
+            "type": "number",
+            "description": "Amount paid in smallest currency unit"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "description": "Payment status"
+          },
+          "paymentType": {
+            "type": "string",
+            "description": "Payment type: subscription, one_time, etc."
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "subscriptionId": {
+            "type": ["string", "null"]
+          },
+          "stripeInvoiceId": {
+            "type": ["string", "null"]
+          },
+          "stripePaymentIntentId": {
+            "type": ["string", "null"]
+          },
+          "stripeChargeId": {
+            "type": ["string", "null"]
+          },
+          "platformFee": {
+            "type": ["number", "null"],
+            "description": "Platform fee in smallest currency unit"
+          }
+        }
+      },
+      "PaymentsResponse": {
+        "type": "object",
+        "description": "Payments list response (Developer API only)",
+        "required": ["payments"],
+        "properties": {
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Payment"
+            }
+          }
+        }
+      },
+      "Subscription": {
+        "type": "object",
+        "description": "Subscription details (Developer API only)",
+        "required": ["id", "type", "status", "currentPeriodEnd", "cancelAtPeriodEnd", "plan", "stripeCustomerId", "stripeSubscriptionId", "createdAt", "updatedAt"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "currentPeriodEnd": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "cancelAtPeriodEnd": {
+            "type": "boolean"
+          },
+          "plan": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/UserPlan" },
+              { "type": "null" }
+            ]
+          },
+          "stripeCustomerId": {
+            "type": ["string", "null"]
+          },
+          "stripeSubscriptionId": {
+            "type": ["string", "null"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SubscriptionsResponse": {
+        "type": "object",
+        "description": "Subscriptions list response (Developer API only)",
+        "required": ["subscriptions"],
+        "properties": {
+          "subscriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Subscription"
+            }
+          }
+        }
+      },
+      "PaywallSessionResponse": {
+        "type": "object",
+        "description": "Paywall session response (SDK only)",
+        "required": ["token", "url"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Opaque token for the paywall session"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Full URL to the hosted pay page"
+          }
+        }
+      }
+    }
+  }
+}

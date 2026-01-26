@@ -1,3 +1,4 @@
+import type { components } from "../generated/openapi-types";
 /**
  * BillingExtensions SDK Public Types
  */
@@ -16,56 +17,16 @@ export type BillingExtensionsClientConfig = {
 };
 
 /**
- * User plan information
- */
-export type UserPlan = {
-  /** Plan ID */
-  id: string;
-  /** Human-readable plan name */
-  name: string;
-  /** Current subscription status */
-  status: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
-  /** ISO timestamp when the current billing period ends */
-  currentPeriodEnd?: string;
-};
-
-/**
  * Plan information returned by the SDK plans endpoint
  */
-export type PlanForSDK = {
-  /** Plan ID */
-  id: string;
-  /** Human-readable plan name */
-  name: string;
-  /** Price amount in smallest currency unit (e.g., cents) */
-  priceAmount: number;
-  /** Currency code (e.g., "usd") */
-  currency: string;
-  /** Billing type (e.g., "recurring", "one_time") */
-  billingType: string;
-  /** Billing interval (e.g., "month", "year") - null for one-time */
-  interval: string | null;
-  /** Number of intervals between billings */
-  intervalCount: number;
-};
+export type PlanForSDK = components["schemas"]["Plan"];
 
 /**
  * User status returned by the API
  */
-export type UserStatus = {
-  /** Unique identifier for this extension user */
-  extensionUserId: string;
-  /** Whether the user has paid to use the extension features */
-  paid: boolean;
-  /** Whether the user has paid to use the extension features */
-  plan: PlanForSDK | null;
-  /** Current subscription status */
-  subscriptionStatus: "active" | "trialing" | "past_due" | "canceled" | "incomplete" | "none";
-  /** ISO timestamp when the current billing period ends */
-  currentPeriodEnd: string | null;
-  /** Whether the user has cancelled their subscription */
-  cancelAtPeriodEnd: boolean;
-};
+export type UserStatus = components["schemas"]["UserStatus"];
+
+export type PaywallSessionResponse = components["schemas"]["PaywallSessionResponse"];
 
 /**
  * Status diff - describes what changed between two statuses
