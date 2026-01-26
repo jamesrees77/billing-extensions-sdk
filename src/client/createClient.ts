@@ -403,7 +403,7 @@ console.log("[BillingExtensionsSDK] paywall session url:", response?.url, typeof
           handler(currentStatus, null, {
             entitlementChanged: true,
             planChanged: currentStatus.plan != null,
-            usageChanged: currentStatus.usage != null,
+            usageChanged: false,
           });
         } catch {
           // Don't let handler errors break the SDK

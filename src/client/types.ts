@@ -22,7 +22,7 @@ export type UserPlan = {
   /** Plan ID */
   id: string;
   /** Human-readable plan name */
-  nickname?: string;
+  name: string;
   /** Current subscription status */
   status: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
   /** ISO timestamp when the current billing period ends */
@@ -50,18 +50,6 @@ export type PlanForSDK = {
 };
 
 /**
- * User usage information
- */
-export type UserUsage = {
-  /** Current usage count */
-  used: number;
-  /** Usage limit (undefined means unlimited) */
-  limit?: number;
-  /** ISO timestamp when usage resets */
-  resetsAt?: string;
-};
-
-/**
  * User status returned by the API
  */
 export type UserStatus = {
@@ -69,10 +57,14 @@ export type UserStatus = {
   extensionUserId: string;
   /** Whether the user has paid to use the extension features */
   paid: boolean;
-  /** Current plan information (if subscribed) */
-  plan?: UserPlan;
-  /** Current usage information (if applicable) */
-  usage?: UserUsage;
+  /** Whether the user has paid to use the extension features */
+  plan: PlanForSDK | null;
+  /** Current subscription status */
+  subscriptionStatus: "active" | "trialing" | "past_due" | "canceled" | "incomplete" | "none";
+  /** ISO timestamp when the current billing period ends */
+  currentPeriodEnd: string | null;
+  /** Whether the user has cancelled their subscription */
+  cancelAtPeriodEnd: boolean;
 };
 
 /**
