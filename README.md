@@ -29,19 +29,24 @@ Because entitlement checks happen over HTTPS on your server, you avoid exposing 
 
 ### Option A — npm (recommended)
 
-> **Package name placeholder:** you haven’t finalised it yet. Replace when chosen.
-
 ```bash
 npm install @billingextensions/sdk
 ```
 
-#### Init - set up main functinoality in seconds, without writing any code.
+### Init (recommended)
 
-Run this, to auto setup "Quick start (MV3 service worker)" and Chrome "permissions" and "host_permissions":
+The init script scaffolds the minimum setup for you:
+
+- adds the required `permissions` (and optional `alarms`) in `manifest.json`
+- adds required `host_permissions` (if needed)
+- generates a ready-to-run MV3 service worker example (the “Quick start” setup)
 
 ```bash
 npx billingextensions init <appId> <publicKey>
 ```
+
+> You can still set everything up manually if you prefer — init is just a shortcut.
+
 
 ---
 
