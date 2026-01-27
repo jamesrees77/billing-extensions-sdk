@@ -2,51 +2,67 @@
 
 Accept payments in your Chrome extension (subscriptions + paid access) with a simple SDK that stays in sync **without requiring a content script**.
 
-BillingExtensionsSDK is built for extension developers who want:
-- a clean integration,
-- secure, consistent status across extension contexts,
-- fewer Chrome warnings (content script optional),
-- and reliable updates even if the user leaves the extension open.
+```js
+// background.js (service worker)
+import BillingExtensionsSDK from "@billingextensions/sdk";
+
+const client = BillingExtensionsSDK.createBillingExtensionsClient({
+  appId: "my-new-app",
+  publicKey: "app_publicKey",
+});
+client.enableBackgroundStatusTracking();
+```
 
 ---
 
-## Secure Server side API
-If you want to have a secure backend, but still monitor user activity and subscriptions, we also have an API (<LINK TO API>). This will increase chances of a featured badge on chrome web store, as it provides secure HTTP checks for payments etc.
+## Menu
+
+- [Secure server-side API](#secure-server-side-api-optional--the-sdk-works-without-this)
+- [Important setup order](#important-setup-order-dont-skip-this)
+- [Install](#install)
+  - [Option A — npm](#option-a--npm-recommended)
+  - [Init](#init-recommended)
+  - [Option B — drop in the dist file](#option-b--drop-in-the-dist-file-no-npm)
+- [Required Chrome permissions](#before-you-start-required-chrome-permissions---already-done-if-you-ran-the-init-script)
+- [Quick start (MV3 service worker)](#quick-start-mv3-service-worker---already-done-if-you-ran-the-init-script)
+- [Using the SDK](#using-the-sdk)
+  - [Gating paid features](#gating-paid-features)
+  - [Listening for updates](#listening-for-updates)
+  - [Open billing / manage subscription](#open-billing--manage-subscription)
+  - [Get available plans](#get-available-plans)
+  - [AutoSync & background tracking](#autosync--background-tracking)
+  - [Force refresh (skip caches)](#force-refresh-skip-caches)
+- [How it works](#how-it-works-in-plain-english)
+- [No content script required](#no-content-script-required-default)
+- [Instant updates (optional content script)](#instant-updates-optional-content-script)
+- [Types](#types)
+- [Full API Reference](#full-api-reference)
+- [Troubleshooting](#troubleshooting)
+- [License / Support](#license--support)
+
+---
+
+## Secure server-side API (optional — the SDK works without this)
+
+The SDK is designed to be secure even if you don’t run a backend. However, if your extension has a backend (recommended for anything sensitive), you can verify subscription status server-side using the BillingExtensions API: **https://billingextensions.com/docs**.
+
+This is useful when you need to:
+- gate paid features securely (don’t trust the client alone)
+- protect expensive operations (e.g. LLM calls)
+- keep your own database in sync with BillingExtensions/Stripe
+- stop sending subscription status from the extension to your backend — your server can check it directly via HTTPS whenever it needs to
+
+---
 
 ## Important setup order (don’t skip this)
 
-1) **Connect Stripe** in the BillingExtensions dashboard  
-2) **Create your App** (your extension)  
-3) **Create your Plans** (subscriptions / tiers)  
-4) Add the SDK to your extension and initialize it
+1) **Sign up to BillingExtensions** (https://billingextensions.com)  
+2) **Connect Stripe** in the BillingExtensions dashboard  
+3) **Create your App** (your extension)  
+4) **Create your Plans** (subscriptions / tiers)  
+5) Add the SDK to your extension and initialize it
 
-> You **cannot create the app** until Stripe is connected.
-
----
-
-## Before you start: required Chrome permissions
-
-BillingExtensionsSDK uses Chrome storage for caching and cross-context sync.
-
-Add this to your `manifest.json` **before** initializing the client:
-
-```json
-{
-  "permissions": ["storage"]
-}
-```
-
-### Optional (recommended): background polling via alarms
-
-If you want the SDK to poll in the background (default: ~1 minute *while an extension UI stays open*), also add:
-
-```json
-{
-  "permissions": ["storage", "alarms"]
-}
-```
-
-> If you don’t add `alarms`, the SDK will still work — it just won’t schedule alarm-based polling.
+> Take these steps before following the rest of this guide.
 
 ---
 
@@ -54,19 +70,23 @@ If you want the SDK to poll in the background (default: ~1 minute *while an exte
 
 ### Option A — npm (recommended)
 
-> **Package name placeholder:** you haven’t finalised it yet. Replace when chosen.
-
 ```bash
-npm install <PACKAGE_NAME_PLACEHOLDER>
+npm install @billingextensions/sdk
 ```
 
-#### Init (coming soon)
+### Init (recommended)
 
-You said you will add an initializer with this shape:
+The init script scaffolds the minimum setup for you:
+
+- adds the required `permissions` (and optional `alarms`) in `manifest.json`
+- adds required `host_permissions` (if needed)
+- generates a ready-to-run MV3 service worker example (the “Quick start” setup)
 
 ```bash
-npm init <PACKAGE_NAME_PLACEHOLDER> <publicKey> <appId>
+npx billingextensions init <appId> <publicKey>
 ```
+
+> You can still set everything up manually if you prefer — init is just a shortcut.
 
 ---
 
@@ -85,97 +105,198 @@ If you don’t want npm, copy the prebuilt file(s) into your extension:
 
 ---
 
-## Quick start (MV3 service worker)
+## Before you start: required Chrome permissions - (already done if you ran the init script)
+
+BillingExtensionsSDK uses Chrome storage for caching and cross-context sync.
+
+Add this to your `manifest.json` **before** initializing the client:
+
+```json
+{
+  "permissions": ["storage"],
+  "host_permissions": ["https://billingextensions.com/*"]
+}
+```
+
+> Note: `host_permissions` should match the BillingExtensions API domain your extension calls.
+
+### Optional (recommended): background polling via alarms - (already done if you ran the init script)
+
+If you want the SDK to poll in the background (default: ~1 minute *while an extension UI stays open*), also add:
+
+```json
+{
+  "permissions": ["storage", "alarms"]
+}
+```
+
+> If you don’t add `alarms`, the SDK will still work — it just won’t schedule alarm-based polling.
+
+---
+
+## Quick start (MV3 service worker) - (already done if you ran the init script)
 
 This is the typical “background-first” setup.
 
 ```js
 // background.js (service worker)
 
-// If using npm/bundler:
-import BillingExtensionsSDK from "<PACKAGE_NAME_PLACEHOLDER>"; // placeholder
-
-// If using dist directly (example):
-// import BillingExtensionsSDK from "./BillingExtensionsSDK.module.js";
+import BillingExtensionsSDK from "@billingextensions/sdk";
 
 const client = BillingExtensionsSDK.createBillingExtensionsClient({
   appId: "my-new-app",
   publicKey: "app_ENNSXktPl1kOxQ2bQbb96",
 });
 
-// Enables:
-// - message-based instant refresh triggers
-// - optional alarms-based polling (if permission exists)
 client.enableBackgroundStatusTracking();
 
 // ✅ Your “listener” (like extpay.onPaid)
 client.onStatusChanged((next, prev, diff) => {
-  // paid just flipped false -> true
   if (!prev?.paid && next.paid) {
     console.log("User paid! ✅", next);
-    // do premium logic here (rebuild menus, unlock background features, etc.)
     buildContextMenu();
   }
 
-  // you can also rebuild on any change
   buildContextMenu();
-
   console.log("status change", { diff, prev, next });
 });
 ```
 
 ---
 
-## Gating paid features
+## Using the SDK
 
-When you need to check if the user is paid:
+### Gating paid features
 
 ```js
 const status = await client.getUser();
 
 if (!status.paid) {
-  await client.openManageBilling(); // sends them to checkout / manage page
+  await client.openManageBilling();
   return;
 }
 
 // ✅ user is paid
 ```
+**Returns (`Promise<UserStatus>`) — key fields (as used by the SDK)**
+- `extensionUserId: string` — @description Unique identifier for this extension user
+- `paid: boolean` —  @description Whether the user has an active paid subscription
+- `subscriptionStatus: string` — @description Subscription status: none, active, trialing, past_due, canceled.
+- `plan: PlanType (See plans below)` — @description Current plan info, or null if no subscription.
+- `currentPeriodEnd: string | null` - @description End of current billing period (ISO 8601)
+- `cancelAtPeriodEnd: boolean` - @description Whether the subscription will cancel at period end
+
+> The full shape of `UserStatus` comes from the BillingExtensions OpenAPI schema (`components["schemas"]["UserStatus"]`).
+
+---
+
+### Listening for updates
+
+```js
+const unsubscribe = client.onStatusChanged((next, prev, diff) => {
+  if (!prev?.paid && next.paid) console.log("Upgraded ✅");
+  if (prev?.paid && !next.paid) console.log("Downgraded ❌");
+  console.log(diff);
+});
+
+// later
+unsubscribe();
+```
+
+**Handler args**
+- `next: UserStatus`
+- `prev: UserStatus | null`
+- `diff: StatusDiff`
+
+**StatusDiff meaning**
+- `entitlementChanged` — paid access changed
+- `planChanged` — plan info changed (`id`, `nickname`, `status`, `currentPeriodEnd`)
+- `usageChanged` — usage info changed (`used`, `limit`, `resetsAt`)
+
+---
+
+### Open billing / manage subscription (if the user has paid / subscribed, use this to open up a url for them to manage the subscription)
+
+```js
+await client.openManageBilling();
+```
+
+**Returns**
+- `Promise<void>`
+
+Under the hood the SDK creates a paywall session and opens `response.url` in a new tab.
+
+---
+
+### Get available plans
+
+```js
+const plans = await client.getPlans();
+console.log(plans);
+```
+
+**Returns (`Promise<PlansForSdk[]>`)**
+- `id: string` — @description Unique identifier for this plan
+- `name: string` —  @description Plan name
+- `priceAmount: number` — @description Price in smallest currency unit (e.g., cents)
+- `currency: string` - @description ISO 4217 currency code (e.g., usd)
+- `billingType: string` - @description Billing type: one_time or recurring
+- `interval: string | null` - @description Billing interval: month, year, etc. (null for one_time)
+- `intervalCount: number` - @description Number of intervals between billings
+
+
+---
+
+### AutoSync & background tracking
+
+#### AutoSync (enabled by default)
+
+```js
+client.enableAutoSync({
+  // AutoSyncOptions (see DEFAULT_AUTOSYNC_OPTIONS)
+});
+
+client.disableAutoSync();
+```
+
+#### Background status tracking (recommended)
+
+```js
+client.enableBackgroundStatusTracking({ periodInMinutes: 1 });
+```
+
+**Options**
+- `periodInMinutes?: number` *(default: 1)*
+
+---
 
 ### Force refresh (skip caches)
 
 ```js
-const status = await client.getUser({ forceRefresh: true });
+const status1 = await client.getUser({ forceRefresh: true });
+const status2 = await client.refresh();
 ```
 
-Or:
-
-```js
-const status = await client.refresh();
-```
+**Returns**
+- `Promise<UserStatus>`
 
 ---
 
 ## How it works (in plain English)
 
-- The SDK fetches the user’s status from the BillingExtensions API (`GET api/v1/sdk/user`).
-- It caches status briefly (storage TTL ~30s) to keep things fast.
-- It writes the latest status into `chrome.storage`.
-- Every extension context (background/popup/options) can listen to the same storage change event and update consistently.
+- The SDK fetches the user’s status from the BillingExtensions API.
+- It caches status briefly (TTL ~30s) to keep things fast.
+- It writes status into `chrome.storage` so every extension context stays in sync.
 - Updates happen via:
-  - **AutoSync** (enabled by default)
-  - **Background tracking** (optional alarms-based polling, default ~1 minute while an extension UI stays open)
-  - **Optional instant refresh** via content-script messaging when the user returns from checkout
+  - AutoSync (enabled by default)
+  - background tracking (optional alarms polling; default 1 minute **while UI stays open**)
+  - optional instant refresh messaging from the content script (if you add it)
 
 ---
 
 ## No content script required (default)
 
 By default, you **do not need** a content script.
-
-This means:
-- fewer warnings,
-- less surface area,
-- and the SDK still stays updated via refresh + polling.
 
 In normal flows, the user pays, Stripe refreshes/redirects, and when the user opens your extension again the SDK will fetch the latest status right away.
 
@@ -193,244 +314,147 @@ The SDK listens for a runtime message of type:
 
 - `BILLINGEXTENSIONS_CHECKOUT_RETURNED`
 
-When received, it silently refreshes status → writes the cache → triggers `onStatusChanged` everywhere.
-
-### Add the content script to your manifest
-
-> You can scope `matches` down if you don’t want `<all_urls>`.
-
-```json
-{
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["BillingExtensionsSDK.content.js"],
-      "run_at": "document_start"
-    }
-  ]
-}
-```
-
 ---
 
-## Listening for updates
+## Types
 
-### `onStatusChanged(handler)`
+These are the types used in the README (from your SDK’s `types.ts`).
 
-Register a listener and react to changes:
+```ts
+export type BillingExtensionsClientConfig = {
+  /** Immutable app ID from the BillingExtensions dashboard */
+  appId: string;
+  /** Publishable public key */
+  publicKey: string;
+};
 
-```js
-const unsubscribe = client.onStatusChanged((next, prev, diff) => {
-  if (!prev?.paid && next.paid) {
-    console.log("User upgraded ✅");
-  }
+export type GetUserOptions = {
+  /** Force refresh from API, ignoring cache (default: false) */
+  forceRefresh?: boolean;
+};
 
-  if (prev?.paid && !next.paid) {
-    console.log("User downgraded / unsubscribed ❌");
-  }
+export type StatusDiff = {
+  /** True if entitled status changed */
+  entitlementChanged: boolean;
+  /** True if plan info changed (id, nickname, status, or currentPeriodEnd) */
+  planChanged: boolean;
+  /** True if usage info changed (used, limit, or resetsAt) */
+  usageChanged: boolean;
+};
 
-  console.log("diff:", diff);
-});
+export type StatusChangeHandler = (
+  next: UserStatus,
+  prev: UserStatus | null,
+  diff: StatusDiff
+) => void;
 
-// later
-unsubscribe();
+// OpenAPI-backed (authoritative shapes)
+export type PlanForSDK = components["schemas"]["Plan"];
+export type UserStatus = components["schemas"]["UserStatus"];
 ```
-
-**Why this is reliable:** notifications are driven by `chrome.storage.onChanged`, so every open extension context gets the same updates without duplicates.
-
----
-
-## AutoSync & background tracking
-
-### AutoSync (enabled by default)
-
-AutoSync is activated automatically when the client is created.
-It:
-- refreshes status safely (errors are silent),
-- dedupes in-flight refresh requests to avoid API spam,
-- helps keep status current across normal usage.
-
-You can control it:
-
-```js
-client.enableAutoSync({
-  // AutoSyncOptions (see DEFAULT_AUTOSYNC_OPTIONS)
-});
-
-client.disableAutoSync();
-```
-
-You can also import defaults:
-
-```js
-import { DEFAULT_AUTOSYNC_OPTIONS } from "<PACKAGE_NAME_PLACEHOLDER>";
-```
-
-### Background status tracking (recommended)
-
-This adds:
-- a message listener for instant refresh triggers, and
-- **optional** `chrome.alarms` polling (if you include `"alarms"` permission)
-
-```js
-client.enableBackgroundStatusTracking({ periodInMinutes: 1 });
-```
-
-Notes:
-- If the `alarms` permission/API isn’t available, the SDK won’t break — it just won’t schedule alarms.
-- The SDK kicks one refresh immediately to warm the cache.
-
----
-
-## Open billing / manage subscription
-
-To send the user to the hosted billing management / checkout flow:
-
-```js
-await client.openManageBilling();
-```
-
-Under the hood this:
-- creates a paywall session (`POST api/v1/sdk/paywall-sessions`)
-- opens the returned URL in a new tab
-- marks that a refresh should happen after the user returns/focuses
-
----
-
-## Get available plans
-
-```js
-const plans = await client.getPlans();
-console.log(plans);
-```
-
-This calls:
-- `GET api/v1/sdk/plans`
 
 ---
 
 ## Full API Reference
 
 ### `BillingExtensionsSDK.createBillingExtensionsClient(config)`
+
 Creates a configured client.
 
-```js
-const client = BillingExtensionsSDK.createBillingExtensionsClient({
-  appId: string,
-  publicKey: string,
-});
-```
+**Params**
+- `config.appId: string` *(required)*
+- `config.publicKey: string` *(required)*
+
+**Returns**
+- `BillingExtensionsClient`
 
 ---
 
 ### `client.getUser(opts?)`
-Fetches user status with caching and SWR-style revalidation.
 
-- `opts.forceRefresh?: boolean`
+Fetch the current user status (cached, with SWR-style revalidation).
 
-Returns: `Promise<UserStatus>`
+**Options**
+- `forceRefresh?: boolean`
 
-Example:
+**Returns**
+- `Promise<UserStatus>`
 
-```js
-const status = await client.getUser();
-```
+Key fields used by the SDK:
+- `paid: boolean`
+- `plan: object | null`
+- `usage: object | null | undefined`
 
 ---
 
 ### `client.refresh()`
-Forces a network refresh and updates the storage cache.
 
-Returns: `Promise<UserStatus>`
+Force a fresh status fetch from the API and update the cache.
 
-```js
-const status = await client.refresh();
-```
+**Returns**
+- `Promise<UserStatus>`
 
 ---
 
 ### `client.openManageBilling()`
-Opens the hosted billing/paywall page for the user.
 
-Returns: `Promise<void>`
+Open the hosted billing / checkout page in a new tab.
 
-```js
-await client.openManageBilling();
-```
+**Returns**
+- `Promise<void>`
 
 ---
 
 ### `client.onStatusChanged(handler)`
-Registers a change handler.
 
-Handler signature:
+Subscribe to status updates across all extension contexts.
 
-```ts
-(next: UserStatus, prev: UserStatus | null, diff: {
-  entitlementChanged: boolean;
-  planChanged: boolean;
-  usageChanged: boolean;
-}) => void
-```
+**Handler**
+- `StatusChangeHandler(next, prev, diff)`
 
-Returns: `() => void` unsubscribe function.
-
-```js
-const unsubscribe = client.onStatusChanged((next, prev, diff) => {
-  // ...
-});
-
-unsubscribe();
-```
+**Returns**
+- `() => void` unsubscribe function
 
 ---
 
 ### `client.enableAutoSync(opts?)`
-Enables AutoSync and optionally merges options.
 
-Returns: `void`
+Enable automatic background syncing (enabled by default).
 
-```js
-client.enableAutoSync();
-```
+**Returns**
+- `void`
 
 ---
 
 ### `client.disableAutoSync()`
-Disables AutoSync.
 
-Returns: `void`
+Disable AutoSync.
 
-```js
-client.disableAutoSync();
-```
+**Returns**
+- `void`
 
 ---
 
 ### `client.enableBackgroundStatusTracking(opts?)`
-Enables background tracking:
-- message-based instant refresh trigger
-- optional alarms-based polling
 
-Options:
-- `periodInMinutes?: number` (default 1)
+Enable background tracking:
+- listens for instant refresh messages after checkout
+- optionally polls via `chrome.alarms` if permitted
 
-Returns: `void`
+**Options**
+- `periodInMinutes?: number` *(default: 1)*
 
-```js
-client.enableBackgroundStatusTracking({ periodInMinutes: 1 });
-```
+**Returns**
+- `void`
 
 ---
 
 ### `client.getPlans()`
-Fetches plans available for this app.
 
-Returns: `Promise<PlanForSDK[]>`
+Fetch the list of plans configured for your app.
 
-```js
-const plans = await client.getPlans();
-```
+**Returns**
+- `Promise<PlanForSDK[]>`
 
 ---
 
@@ -461,4 +485,5 @@ If your billing URL points to localhost in production:
 ---
 
 ## License / Support
+
 TODO: add your license and support contact.
