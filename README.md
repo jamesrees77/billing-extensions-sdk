@@ -22,34 +22,6 @@ If you want to have a secure backend, but still monitor user activity and subscr
 
 > You **cannot create the app** until Stripe is connected.
 
----
-
-## Before you start: required Chrome permissions
-
-BillingExtensionsSDK uses Chrome storage for caching and cross-context sync.
-
-Add this to your `manifest.json` **before** initializing the client:
-
-```json
-{
-  "permissions": ["storage"]
-}
-```
-
-### Optional (recommended): background polling via alarms
-
-If you want the SDK to poll in the background (default: ~1 minute *while an extension UI stays open*), also add:
-
-```json
-{
-  "permissions": ["storage", "alarms"]
-}
-```
-
-> If you don’t add `alarms`, the SDK will still work — it just won’t schedule alarm-based polling.
-
----
-
 ## Install
 
 ### Option A — npm (recommended)
@@ -57,15 +29,15 @@ If you want the SDK to poll in the background (default: ~1 minute *while an exte
 > **Package name placeholder:** you haven’t finalised it yet. Replace when chosen.
 
 ```bash
-npm install <PACKAGE_NAME_PLACEHOLDER>
+npm install @billingextensions/sdk
 ```
 
-#### Init (coming soon)
+#### Init - set up main functinoality in seconds, without writing any code.
 
-You said you will add an initializer with this shape:
+Run this, to auto setup "Quick start (MV3 service worker)" and Chrome "permissions" and "host_permissions":
 
 ```bash
-npm init <PACKAGE_NAME_PLACEHOLDER> <publicKey> <appId>
+npx billingextensions init <appId> <publicKey>
 ```
 
 ---
@@ -85,9 +57,38 @@ If you don’t want npm, copy the prebuilt file(s) into your extension:
 
 ---
 
+## Before you start: required Chrome permissions - IF YOU RUN npx billingextensions init <appId> <publicKey>, then this will be genarated automatically
+
+BillingExtensionsSDK uses Chrome storage for caching and cross-context sync.
+
+Add this to your `manifest.json` **before** initializing the client:
+
+```json
+{
+  "permissions": ["storage"]
+  "host_permissions": [
+    "https://billingextensions.com/*"
+  ],
+}
+```
+
+### Optional (recommended): background polling via alarms
+
+If you want the SDK to poll in the background (default: ~1 minute *while an extension UI stays open*), also add:
+
+```json
+{
+  "permissions": ["storage", "alarms"]
+}
+```
+
+> If you don’t add `alarms`, the SDK will still work — it just won’t schedule alarm-based polling.
+
+---
+
 ## Quick start (MV3 service worker)
 
-This is the typical “background-first” setup.
+This is the typical “background-first” setup. - IF YOU RUN npx billingextensions init <appId> <publicKey>, then this will be genarated automatically
 
 ```js
 // background.js (service worker)
