@@ -1,17 +1,20 @@
 # BillingExtensionsSDK
 
-Accept payments in your Chrome extension (subscriptions + paid access) with a simple SDK that stays in sync **without requiring a content script**.
-
-BillingExtensionsSDK is built for extension developers who want:
-- a clean integration,
-- secure, consistent status across extension contexts,
-- fewer Chrome warnings (content script optional),
-- and reliable updates even if the user leaves the extension open.
+Accept payments in your Chrome extension (subscriptions + paid access) with a simple SDK that stays in sync **without requiring a content script**. 
 
 ---
 
-## Secure Server side API
-If you want to have a secure backend, but still monitor user activity and subscriptions, we also have an API (<LINK TO API>). This will increase chances of a featured badge on chrome web store, as it provides secure HTTP checks for payments etc.
+## Secure server-side API
+
+If your extension has a backend (recommended for anything sensitive), you can verify subscription status server-side using the BillingExtensions API: **<LINK TO API>**.
+
+This is useful when you need to:
+- gate paid features securely (don’t trust the client alone),
+- protect expensive operations (e.g. LLM calls),
+- keep your own database in sync with BillingExtensions/Stripe.
+
+Because entitlement checks happen over HTTPS on your server, you avoid exposing “paid/unpaid” logic purely in the extension — and you can keep most payment logic off the client entirely.
+
 
 ## Important setup order (don’t skip this)
 
