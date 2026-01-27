@@ -4,24 +4,23 @@ Accept payments in your Chrome extension (subscriptions + paid access) with a si
 
 ---
 
-## Secure server-side API (recommended if you have a backend - but not needed. The SDK will work without.)
+## Secure server-side API (optional — the SDK works without this)
 
-If your extension has a backend (recommended for anything sensitive), you can verify subscription status server-side using the BillingExtensions API: **<https://billingextensions.com/docs>**.
+The SDK is designed to be secure even if you don’t run a backend. However, if your extension has a backend (recommended for anything sensitive), you can verify subscription status server-side using the BillingExtensions API: **<https://billingextensions.com/docs>**.
 
 This is useful when you need to:
 - gate paid features securely (don’t trust the client alone),
 - protect expensive operations (e.g. LLM calls),
 - keep your own database in sync with BillingExtensions/Stripe.
-
-Because entitlement checks happen over HTTPS on your server, you avoid exposing “paid/unpaid” logic purely in the extension — and you can keep most payment logic off the client entirely.
-
+- stop sending subscription status from the extension to your backend — your server can check it directly via HTTPS whenever it needs to
 
 ## Important setup order (don’t skip this)
 
-1) **Connect Stripe** in the BillingExtensions dashboard  
-2) **Create your App** (your extension)  
-3) **Create your Plans** (subscriptions / tiers)  
-4) Add the SDK to your extension and initialize it
+1) **Sign up to BillingExtensions** (https://billingextensions.com)
+2) **Connect Stripe** in the BillingExtensions dashboard  
+3) **Create your App** (your extension)  
+4) **Create your Plans** (subscriptions / tiers)  
+5) Add the SDK to your extension and initialize it
 
 > You **cannot create the app** until Stripe is connected.
 
