@@ -65,7 +65,7 @@ If you don’t want npm, copy the prebuilt file(s) into your extension:
 
 ---
 
-## Before you start: required Chrome permissions - IF YOU RUN npx billingextensions init <appId> <publicKey>, then this will be genarated automatically
+## Before you start: required Chrome permissions - (already done if you ran the init script)
 
 BillingExtensionsSDK uses Chrome storage for caching and cross-context sync.
 
@@ -80,7 +80,7 @@ Add this to your `manifest.json` **before** initializing the client:
 }
 ```
 
-### Optional (recommended): background polling via alarms
+### Optional (recommended): background polling via alarms - (already done if you ran the init script)
 
 If you want the SDK to poll in the background (default: ~1 minute *while an extension UI stays open*), also add:
 
@@ -94,9 +94,9 @@ If you want the SDK to poll in the background (default: ~1 minute *while an exte
 
 ---
 
-## Quick start (MV3 service worker)
+## Quick start (MV3 service worker) - (already done if you ran the init script)
 
-This is the typical “background-first” setup. - IF YOU RUN npx billingextensions init <appId> <publicKey>, then this will be genarated automatically
+This is the typical “background-first” setup.
 
 ```js
 // background.js (service worker)
