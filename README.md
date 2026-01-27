@@ -6,7 +6,7 @@ Accept payments in your Chrome extension (subscriptions + paid access) with a si
 
 ## Secure server-side API (recommended if you have a backend - but not needed. The SDK will work without.)
 
-If your extension has a backend (recommended for anything sensitive), you can verify subscription status server-side using the BillingExtensions API: **<LINK TO API>**.
+If your extension has a backend (recommended for anything sensitive), you can verify subscription status server-side using the BillingExtensions API: **<https://billingextensions.com/docs>**.
 
 This is useful when you need to:
 - gate paid features securely (don’t trust the client alone),
