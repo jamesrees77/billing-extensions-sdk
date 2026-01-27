@@ -284,7 +284,7 @@ const status2 = await client.refresh();
 
 ## How it works (in plain English)
 
-- The SDK fetches the user’s status from the BillingExtensions API (`GET api/v1/sdk/user`).
+- The SDK fetches the user’s status from the BillingExtensions API.
 - It caches status briefly (TTL ~30s) to keep things fast.
 - It writes status into `chrome.storage` so every extension context stays in sync.
 - Updates happen via:
