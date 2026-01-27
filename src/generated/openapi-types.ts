@@ -119,6 +119,7 @@ export interface components {
         };
         /** @description User subscription status (shared: SDK + Developer API) */
         UserStatus: {
+            /** @description Unique identifier for this extension user */
             extensionUserId: string;
             /** @description Whether the user has an active paid subscription */
             paid: boolean;
