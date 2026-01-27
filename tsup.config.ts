@@ -65,4 +65,20 @@ export default defineConfig([
         define,
         outExtension: () => ({ js: ".js" }),
       },
+  // 5) CLI (Node) -> dist/cli.js for `npx billingextensions ...`
+  {
+    entry: { cli: "src/cli.ts" },
+    format: ["esm"],
+    splitting: false,
+    sourcemap: false,
+    clean: false,
+    treeshake: true,
+    minify: false,
+    target: "node18",
+    outDir: "dist",
+    platform: "node",
+    tsconfig: "tsconfig.cli.json",
+    define,
+    outExtension: () => ({ js: ".js" }),
+  },
 ]);

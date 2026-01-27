@@ -18,19 +18,20 @@
       }
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.cli.json --noEmit",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "prepublishOnly": "npm run build",
-     "gen:types": "openapi-typescript ./openapi/openapi.public.json -o ./src/generated/openapi-types.ts"
+    "gen:types": "openapi-typescript ./openapi/openapi.public.json -o ./src/generated/openapi-types.ts"
+  },
+  "bin": {
+    "billingextensions": "./dist/cli.js"
   },
   "keywords": [
     "browser-extension",
@@ -44,6 +45,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/chrome": "^0.0.268",
+    "@types/node": "^25.0.10",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",
