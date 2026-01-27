@@ -62,7 +62,7 @@ This is useful when you need to:
 4) **Create your Plans** (subscriptions / tiers)  
 5) Add the SDK to your extension and initialize it
 
-> You **cannot create the app** until Stripe is connected.
+> Take these steps before following the rest of this guide.
 
 ---
 
