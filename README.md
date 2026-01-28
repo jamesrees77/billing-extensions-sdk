@@ -21,7 +21,7 @@ client.enableBackgroundStatusTracking();
 - [Install](#install)
   - [Option A — npm](#option-a--npm-recommended)
   - [Init](#init-recommended)
-  - [Option B — drop in the dist file](#option-b--drop-in-the-dist-file-no-npm)
+  - [Option B — drop in the dist file](#option-b--drop-in-the-dist-file-no-npm--no-build-step)
 - [Required Chrome permissions](#before-you-start-required-chrome-permissions---already-done-if-you-ran-the-init-script)
 - [Quick start (MV3 service worker)](#quick-start-mv3-service-worker---already-done-if-you-ran-the-init-script)
 - [Using the SDK](#using-the-sdk)
