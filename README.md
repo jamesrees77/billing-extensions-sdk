@@ -77,7 +77,7 @@ npm install @billingextensions/sdk
 
 The init script scaffolds the minimum setup for you:
 
-- adds required `permissions` (`storage`, plus `alarms` if available) in `manifest.json`
+- adds required `permissions` (`storage`) in `manifest.json`
 - adds required `host_permissions` (if needed)
 - detects your existing service worker setup:
   - **classic** (uses `importScripts`) vs **module** (ESM `import/export`)
@@ -158,18 +158,6 @@ Add this to your `manifest.json` **before** initializing the client:
 ```
 
 > Note: `host_permissions` should match the BillingExtensions API domain your extension calls.
-
-### Optional (recommended): background polling via alarms - (already done if you ran the init script)
-
-If you want the SDK to poll in the background (default: ~1 minute *while an extension UI stays open*), also add:
-
-```json
-{
-  "permissions": ["storage", "alarms"]
-}
-```
-
-> If you don’t add `alarms`, the SDK will still work — it just won’t schedule alarm-based polling.
 
 ---
 
@@ -300,12 +288,15 @@ client.disableAutoSync();
 
 #### Background status tracking (recommended)
 
+Call this in your service worker to warm the cache on startup (regarldess of content script). If you add content script, it will not work without this:
+
 ```js
-client.enableBackgroundStatusTracking({ periodInMinutes: 1 });
+client.enableBackgroundStatusTracking();
 ```
 
-**Options**
-- `periodInMinutes?: number` *(default: 1)*
+This does two things:
+1. **Warms the cache** — kicks off an initial refresh so `getUser()` returns instantly when the popup opens
+2. **Listens for content script messages** — if you add the optional content script, enables instant post-checkout updates (see [Instant updates](#instant-updates-optional-content-script))
 
 ---
 
@@ -327,9 +318,8 @@ const status2 = await client.refresh();
 - It caches status briefly (TTL ~30s) to keep things fast.
 - It writes status into `chrome.storage` so every extension context stays in sync.
 - Updates happen via:
-  - AutoSync (enabled by default)
-  - background tracking (optional alarms polling; default 1 minute **while UI stays open**)
-  - optional instant refresh messaging from the content script (if you add it)
+  - AutoSync (enabled by default) — refreshes on focus, visibility, and network changes
+  - Optional instant refresh messaging from the content script (if you add it)
 
 ---
 
@@ -474,14 +464,12 @@ Disable AutoSync.
 
 ---
 
-### `client.enableBackgroundStatusTracking(opts?)`
+### `client.enableBackgroundStatusTracking()`
 
-Enable background tracking:
-- listens for instant refresh messages after checkout
-- optionally polls via `chrome.alarms` if permitted
+Enable background tracking. Recommended to call in your service worker.
 
-**Options**
-- `periodInMinutes?: number` *(default: 1)*
+- Warms the cache with an initial refresh so `getUser()` is fast when the popup opens
+- Sets up a message listener for the optional content script's checkout return notification
 
 **Returns**
 - `void`
@@ -505,16 +493,12 @@ In most cases the update will feel **instant**.
 
 That’s because Stripe typically reloads/redirects after payment, and when the user opens your extension again the SDK will fetch the latest status right away (and also revalidate in the background).
 
-The ~1 minute timing only applies when the user **keeps your extension UI open the whole time** (e.g. they pay in another tab and never close the popup/options page). In that case, background tracking can update status on the next poll.
+If the user **keeps your extension UI open the whole time** (e.g. they pay in another tab and never close the popup/options page), the status will update when they next focus the popup (via AutoSync) or close/reopen it.
 
 If you want truly instant updates even while the extension UI stays open, you can add the optional content script build — but it’s optional on purpose:
 
 - Adding a content script often triggers extra Chrome warnings and can make the review process take longer.
 - BillingExtensionsSDK defaults to a no-content-script approach to reduce review friction.
-
-### “Alarms polling isn’t working”
-- Ensure your manifest includes `"alarms"` permission.
-- The SDK degrades gracefully if alarms aren’t available.
 
 ### “I’m seeing localhost URLs”
 If your billing URL points to localhost in production:

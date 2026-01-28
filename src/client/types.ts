@@ -128,7 +128,14 @@ export interface BillingExtensionsClient {
    */
   enableAutoSync(opts?: AutoSyncOptions): void;
 
-  enableBackgroundStatusTracking(opts?: { periodInMinutes?: number }): void;
+  /**
+   * Enable background status tracking (recommended)
+   *
+   * Call this in your service worker/background script. It does two things:
+   * 1. Warms the cache with an initial refresh so getUser() is fast when the popup opens
+   * 2. Sets up a message listener for the optional content script's checkout return notification
+   */
+  enableBackgroundStatusTracking(): void;
 
   /**
    * Disable AutoSync
