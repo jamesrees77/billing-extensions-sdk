@@ -44,11 +44,12 @@ const STATUS_CACHE_KEY = "billingextensions_status_cache";
 /**
  * Default cache TTL in milliseconds (30 seconds)
  */
-const DEFAULT_CACHE_TTL_MS = 30_000;
+const DEFAULT_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
 
 const CHECKOUT_RETURN_MESSAGE = "BILLINGEXTENSIONS_CHECKOUT_RETURNED";
 const DEFAULT_BG_ALARM_NAME = "billingextensions_status_tracking";
-const DEFAULT_BG_POLL_MINUTES = 1;
+const DEFAULT_BG_POLL_MINUTES = 60;
 
 const LAST_SWR_AT_KEY = "billingextensions_last_swr_at";
 const SWR_COOLDOWN_MS = 5_000;
@@ -345,9 +346,9 @@ const enableBackgroundStatusTracking = (opts?: { periodInMinutes?: number }): vo
             currentStatus = cached;
           
             // SWR only when cache says paid (fixes paid->unpaid needing 2 opens)
-            if (cached.paid === true) {
+            // if (cached.paid === true) {
               schedulePaidSWRRevalidate();
-            }
+            // }
           
             return cached;
           }

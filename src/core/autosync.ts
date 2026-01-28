@@ -15,7 +15,7 @@ export const DEFAULT_AUTOSYNC_OPTIONS: Required<AutoSyncOptions> = {
   refreshOnFocus: true,
   refreshOnOnline: true,
   debounceMs: 300,
-  minIntervalMs: 3000,
+  minIntervalMs: 300_000,
 };
 
 /**
