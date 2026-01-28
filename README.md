@@ -88,24 +88,34 @@ The init script scaffolds the minimum setup for you:
 #### Quick start (works for any extension — no npm project required)
 
 ```bash
-npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey>
+npx -y -p @billingextensions/sdk bext init <appId> <publicKey>
 ```
 
 #### Optional flags
+<details>
+  <summary><strong>Advanced: init flags (optional)</strong></summary>
 
-```bash
-# Force classic service worker (importScripts + IIFE build)
-npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey> --classic
+  <br />
 
-# Force module service worker (type="module" + ESM)
-npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey> --module
+  ```bash
+  # Force classic service worker (importScripts + IIFE build)
+  npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey> --classic
 
-# Use npm import (requires a bundler/build step; module mode only)
-npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey> --module --npm
+  # Force module service worker (type="module" + ESM)
+  npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey> --module
 
-# Override the service worker path
-npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey> --sw background/service-worker.js
-```
+  # Use npm import (requires a bundler/build step; module mode only)
+  npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey> --module --npm
+
+  # Override the service worker path
+  npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey> --sw background/service-worker.js
+  ```
+
+  **Notes**
+  - `--npm` generates `import * as BillingExtensionsSDK from "@billingextensions/sdk"` — this only works if your service worker is bundled (Chrome can’t resolve npm specifiers at runtime).
+  - If your service worker already uses `importScripts(...)`, init will default to **classic** and will not set `background.type = "module"`.
+
+</details>
 
 > Notes:
 > - `--npm` generates `import * as BillingExtensionsSDK from "@billingextensions/sdk"` — this only works if your service worker is bundled (Chrome can’t resolve npm specifiers at runtime).
