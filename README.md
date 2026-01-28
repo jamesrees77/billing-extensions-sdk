@@ -77,30 +77,60 @@ npm install @billingextensions/sdk
 
 The init script scaffolds the minimum setup for you:
 
-- adds the required `permissions` (and optional `alarms`) in `manifest.json`
+- adds required `permissions` (`storage`, plus `alarms` if available) in `manifest.json`
 - adds required `host_permissions` (if needed)
-- generates a ready-to-run MV3 service worker example (the “Quick start” setup)
+- detects your existing service worker setup:
+  - **classic** (uses `importScripts`) vs **module** (ESM `import/export`)
+  - and chooses the right integration automatically
+- injects a ready-to-run MV3 service worker snippet
+- (vendored mode) copies the right prebuilt SDK file next to your service worker
+
+#### Quick start (works for any extension — no npm project required)
 
 ```bash
-npx billingextensions init <appId> <publicKey>
+npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey>
 ```
+
+#### Optional flags
+
+```bash
+# Force classic service worker (importScripts + IIFE build)
+npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey> --classic
+
+# Force module service worker (type="module" + ESM)
+npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey> --module
+
+# Use npm import (requires a bundler/build step; module mode only)
+npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey> --module --npm
+
+# Override the service worker path
+npx -y -p @billingextensions/sdk billingextensions init <appId> <publicKey> --sw background/service-worker.js
+```
+
+> Notes:
+> - `--npm` generates `import * as BillingExtensionsSDK from "@billingextensions/sdk"` — this only works if your service worker is bundled (Chrome can’t resolve npm specifiers at runtime).
+> - If your service worker already uses `importScripts(...)`, init will default to **classic** and will **not** set `background.type = "module"`.
 
 > You can still set everything up manually if you prefer — init is just a shortcut.
 
 ---
 
-### Option B — drop in the dist file (no npm)
+### Option B — drop in the dist file (no npm / no build step)
 
-If you don’t want npm, copy the prebuilt file(s) into your extension:
+If you don’t want npm or a build step, copy the prebuilt file(s) into your extension and reference them directly:
 
 - `dist/BillingExtensionsSDK.js`  
-  Use for classic `<script>` include (non-module).
+  Classic build for MV3 service workers using `importScripts(...)` (global `BillingExtensionsSDK`).
+
 - `dist/BillingExtensionsSDK.module.js`  
-  Use for ESM import (`type="module"` / bundlers).
+  ESM build for `background.type = "module"` service workers (import via a relative path).
+
 - `dist/BillingExtensionsSDK.content.js`  
   Optional content script for **instant** post-checkout refresh messaging.
-- `dist/index.cjs`  
-  CommonJS build (Node/bundlers that want CJS).
+
+- `dist/index.cjs` / `dist/index.js`  
+  Bundler/Node builds (CJS/ESM) if you’re importing via a build tool.
+
 
 ---
 
