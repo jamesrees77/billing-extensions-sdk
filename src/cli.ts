@@ -252,7 +252,6 @@ function applyManifestPatches(manifest: any, mode: Mode) {
   // Required permissions
   manifest.permissions = mergeStringArray(manifest.permissions, [
     "storage",
-    "alarms",
   ]);
   manifest.host_permissions = mergeStringArray(manifest.host_permissions, [
     "https://billingextensions.com/*",
@@ -336,8 +335,8 @@ const client = BillingExtensionsSDK.createBillingExtensionsClient({
 });
 
 // Enables (recommended):
-// - message-based instant refresh triggers
-// - optional alarms-based polling (if permission exists)
+// - Warms the cache with an initial refresh so "getUser()" is fast when the popup opens
+// - Sets up a message listener for the optional content script's checkout return notification
 client.enableBackgroundStatusTracking();
 
 // ✅ Your “listener”
@@ -363,8 +362,8 @@ const client = BillingExtensionsSDK.createBillingExtensionsClient({
 });
 
 // Enables (recommended):
-// - message-based instant refresh triggers
-// - optional alarms-based polling (if permission exists)
+// - Warms the cache with an initial refresh so "getUser()" is fast when the popup opens
+// - Sets up a message listener for the optional content script's checkout return notification
 client.enableBackgroundStatusTracking();
 
 // ✅ Your “listener”
