@@ -4,7 +4,6 @@ Accept payments in your Chrome extension (subscriptions + paid access) with a si
 
 ```js
 // background.js (service worker)
-import BillingExtensionsSDK from "@billingextensions/sdk";
 
 const client = BillingExtensionsSDK.createBillingExtensionsClient({
   appId: "my-new-app",
