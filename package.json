@@ -31,7 +31,8 @@
     "gen:types": "openapi-typescript ./openapi/openapi.public.json -o ./src/generated/openapi-types.ts"
   },
   "bin": {
-    "billingextensions": "./dist/cli.js"
+    "billingextensions": "./dist/cli.js",
+    "bext": "./dist/cli.js"
   },
   "keywords": [
     "browser-extension",
