@@ -288,7 +288,7 @@ client.disableAutoSync();
 
 #### Background status tracking (recommended)
 
-Call this in your service worker to warm the cache on startup (regarldess of content script). If you add content script, it will not work without this:
+Call this in your service worker to warm the cache on startup (regardless of the content script). If you add a content script, it will not work without this:
 
 ```js
 client.enableBackgroundStatusTracking();
