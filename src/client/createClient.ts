@@ -44,11 +44,10 @@ const STATUS_CACHE_KEY = "billingextensions_status_cache";
 /**
  * Default cache TTL in milliseconds (30 seconds)
  */
-const DEFAULT_CACHE_TTL_MS = 30_000;
+const DEFAULT_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
 
 const CHECKOUT_RETURN_MESSAGE = "BILLINGEXTENSIONS_CHECKOUT_RETURNED";
-const DEFAULT_BG_ALARM_NAME = "billingextensions_status_tracking";
-const DEFAULT_BG_POLL_MINUTES = 1;
 
 const LAST_SWR_AT_KEY = "billingextensions_last_swr_at";
 const SWR_COOLDOWN_MS = 5_000;
@@ -271,23 +270,20 @@ const schedulePaidSWRRevalidate = (): void => {
   })();
 };
 
-  // Background tracking state (per client instance)
+  // Background tracking state
 let backgroundTrackingEnabled = false;
-let alarmListenerAttached = false;
 let messageListenerAttached = false;
 
 /**
- * Enable background status tracking.
- * - Always listens for a content-script "checkout returned" message (instant refresh)
- * - Optionally enables chrome.alarms polling if available/allowed (no hard requirement)
+ * Enable background status tracking (recommended for service workers).
+ * - Warms the cache with an initial refresh so getUser() is fast when popup opens
+ * - Listens for content-script "checkout returned" message (for instant post-checkout updates)
  */
-const enableBackgroundStatusTracking = (opts?: { periodInMinutes?: number }): void => {
+const enableBackgroundStatusTracking = (): void => {
   if (backgroundTrackingEnabled) return;
   backgroundTrackingEnabled = true;
 
-  const periodInMinutes = opts?.periodInMinutes ?? DEFAULT_BG_POLL_MINUTES;
-
-  // 1) Instant refresh trigger via message (works without alarms)
+  // 1) Instant refresh trigger via message from content script
   if (typeof chrome !== "undefined" && chrome.runtime?.onMessage && !messageListenerAttached) {
     messageListenerAttached = true;
 
@@ -301,26 +297,7 @@ const enableBackgroundStatusTracking = (opts?: { periodInMinutes?: number }): vo
     });
   }
 
-  // 2) Optional polling via alarms (only if permission/API exists)
-  if (typeof chrome !== "undefined" && chrome.alarms?.create && chrome.alarms?.onAlarm) {
-    try {
-      chrome.alarms.create(DEFAULT_BG_ALARM_NAME, { periodInMinutes });
-    } catch {
-      // likely missing "alarms" permission — ignore
-    }
-
-    if (!alarmListenerAttached) {
-      alarmListenerAttached = true;
-
-      chrome.alarms.onAlarm.addListener((alarm) => {
-        if (alarm.name === DEFAULT_BG_ALARM_NAME) {
-          void autoSyncRefresh();
-        }
-      });
-    }
-  }
-
-  // 3) Kick once so cache is warm
+  // 2) Kick once so cache is warm
   void autoSyncRefresh();
 };
 
@@ -345,9 +322,9 @@ const enableBackgroundStatusTracking = (opts?: { periodInMinutes?: number }): vo
             currentStatus = cached;
           
             // SWR only when cache says paid (fixes paid->unpaid needing 2 opens)
-            if (cached.paid === true) {
+            // if (cached.paid === true) {
               schedulePaidSWRRevalidate();
-            }
+            // }
           
             return cached;
           }
@@ -425,8 +402,8 @@ const enableBackgroundStatusTracking = (opts?: { periodInMinutes?: number }): vo
       void activateAutoSync(getAutoSyncState, autoSyncRefresh, updateAutoSyncState);
     },
 
-    enableBackgroundStatusTracking(opts?: { periodInMinutes?: number }): void {
-      enableBackgroundStatusTracking(opts);
+    enableBackgroundStatusTracking(): void {
+      enableBackgroundStatusTracking();
     },
 
     disableAutoSync(): void {
