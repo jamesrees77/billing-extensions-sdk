@@ -427,7 +427,7 @@ Force a fresh status fetch from the API and update the cache.
 
 ### `client.openManageBilling()`
 
-Open the hosted billing / checkout page in a new tab.
+Open checkout page / manage subscription in a new tab (if the user has paid / subscribed, use this to open up a url for them to manage the subscription)
 
 **Returns**
 - `Promise<void>`
