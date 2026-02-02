@@ -43,6 +43,24 @@ function isNgrokOrigin(origin: string): boolean {
 }
 
 /**
+ * Detect if the extension is running in development mode (unpacked).
+ * Unpacked extensions don't have an update_url in their manifest,
+ * while store-installed extensions do.
+ */
+function isDevelopmentMode(): boolean {
+  try {
+    if (typeof chrome !== "undefined" && chrome.runtime?.getManifest) {
+      const manifest = chrome.runtime.getManifest();
+      // Unpacked extensions don't have update_url
+      return !manifest.update_url;
+    }
+  } catch {
+    // If we can't determine, assume not in dev mode
+  }
+  return false;
+}
+
+/**
  * Default request timeout in milliseconds
  */
 const DEFAULT_TIMEOUT_MS = 15000;
@@ -105,6 +123,7 @@ export async function httpRequest<T>(
     "X-App-Id": appId,
     "X-Extension-User-Id": extensionUserId,
     "X-SDK-Version": getSDKVersion(),
+    "X-Test-Mode": isDevelopmentMode() ? "true" : "false",
   };
 
     // Ngrok: skip the browser warning/interstitial (prevents HTML responses)
