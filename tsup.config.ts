@@ -2,7 +2,7 @@ import { defineConfig } from "tsup";
 
 const define = {
   __SDK_VERSION__: JSON.stringify(process.env.npm_package_version || "0.2.0"),
-  __DEV_API_ORIGIN__: JSON.stringify("https://cd68c508892d.ngrok-free.app/"), 
+  __DEV_API_ORIGIN__: JSON.stringify("https://f8e3f5799e50.ngrok-free.app/"), 
 };
 
 export default defineConfig([

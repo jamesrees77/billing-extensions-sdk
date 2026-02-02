@@ -47,12 +47,13 @@ function isNgrokOrigin(origin: string): boolean {
  * Unpacked extensions don't have an update_url in their manifest,
  * while store-installed extensions do.
  */
-function isDevelopmentMode(): boolean {
+async function isDevelopmentMode(): Promise<boolean> {
+ 
   try {
-    if (typeof chrome !== "undefined" && chrome.runtime?.getManifest) {
-      const manifest = chrome.runtime.getManifest();
+    if (typeof chrome !== "undefined") {
+      const info = await chrome.management.getSelf();
       // Unpacked extensions don't have update_url
-      return !manifest.update_url;
+      return info.installType === "development";
     }
   } catch {
     // If we can't determine, assume not in dev mode
@@ -123,7 +124,7 @@ export async function httpRequest<T>(
     "X-App-Id": appId,
     "X-Extension-User-Id": extensionUserId,
     "X-SDK-Version": getSDKVersion(),
-    "X-Test-Mode": isDevelopmentMode() ? "true" : "false",
+    "X-Test-Mode": (await isDevelopmentMode()) ? "true" : "false",
   };
 
     // Ngrok: skip the browser warning/interstitial (prevents HTML responses)
