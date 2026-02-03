@@ -17,7 +17,7 @@ import { getSDKVersion } from "./version.js";
 /**
  * Production API origin - not configurable publicly
  */
-const API_ORIGIN = "https://api.billingextensions.com";
+const API_ORIGIN = "https://www.billingextensions.com/";
 
 /**
  * Internal development override (not exported)

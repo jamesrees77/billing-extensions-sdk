@@ -1,6 +1,6 @@
 {
   "name": "@billingextensions/sdk",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "TypeScript SDK for BillingExtensions - MV3-safe browser extension billing",
   "type": "module",
   "publishConfig": { "access": "public" },
