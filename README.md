@@ -130,13 +130,10 @@ npx -y -p @billingextensions/sdk bext init <appId> <publicKey>
 If you don’t want npm or a build step, copy the prebuilt file(s) into your extension and reference them directly:
 
 - `dist/BillingExtensionsSDK.js`  
-  Classic build for MV3 service workers using `importScripts(...)` (global `BillingExtensionsSDK`).
+  Classic build for MV3 service workers using `importScripts(...)` (global `BillingExtensionsSDK`). Can also be used as a content script for instant checkout updates.
 
 - `dist/BillingExtensionsSDK.module.js`  
-  ESM build for `background.type = "module"` service workers (import via a relative path).
-
-- `dist/BillingExtensionsSDK.content.js`  
-  Optional content script for **instant** post-checkout refresh messaging.
+  ESM build for `background.type = "module"` service workers (import via a relative path). Can also be used as a content script for instant checkout updates.
 
 - `dist/index.cjs` / `dist/index.js`  
   Bundler/Node builds (CJS/ESM) if you’re importing via a build tool.
@@ -333,15 +330,38 @@ In normal flows, the user pays, Stripe refreshes/redirects, and when the user op
 
 ## Instant updates (optional content script)
 
-If you want the UI to update instantly even while the extension UI stays open during checkout, you *can* add the provided content script build.
+If you want the UI to update instantly even while the extension UI stays open during checkout, you *can* add the SDK as a content script. The SDK automatically detects when it's running in a content script context and listens for checkout success.
 
 This is optional on purpose:
 - Adding a content script often triggers extra Chrome warnings and can make the review process take longer.
 - BillingExtensionsSDK defaults to a no-content-script approach to reduce review friction.
 
-The SDK listens for a runtime message of type:
+### Usage
 
-- `BILLINGEXTENSIONS_CHECKOUT_RETURNED`
+**Option 1: IIFE format (BillingExtensionsSDK.js)**
+
+```json
+"content_scripts": [
+  {
+    "matches": ["https://billingextensions.com/*"],
+    "js": ["BillingExtensionsSDK.js"],
+    "run_at": "document_start"
+  }
+]
+```
+
+**Option 2: ESM format (BillingExtensionsSDK.module.js)**
+
+```json
+"content_scripts": [
+  {
+    "matches": ["https://billingextensions.com/*"],
+    "js": ["BillingExtensionsSDK.module.js"],
+    "run_at": "document_start",
+    "type": "module"
+  }
+]
+```
 
 ---
 
