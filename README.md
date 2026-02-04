@@ -526,7 +526,3 @@ If your billing URL points to localhost in production:
 - and ensure you’re using the correct environment variables.
 
 ---
-
-## License / Support
-
-TODO: add your license and support contact.
