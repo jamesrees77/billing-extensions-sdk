@@ -51,21 +51,8 @@ export default defineConfig([
     define,
     outExtension: () => ({ js: ".module.js" }),
   },
-    // 4) Content script build (optional “instant” signal) -> dist/BillingExtensionsSDK.content.js
-    {
-        entry: { "BillingExtensionsSDK.content": "src/content/checkout-return-listener.ts" },
-        format: ["iife"],
-        splitting: false,
-        sourcemap: false,
-        clean: false,
-        treeshake: true,
-        minify: true,
-        target: "es2019",
-        outDir: "dist",
-        define,
-        outExtension: () => ({ js: ".js" }),
-      },
-  // 5) CLI (Node) -> dist/cli.js for `npx billingextensions ...`
+
+  // 4) CLI (Node) -> dist/cli.js for `npx billingextensions ...`
   {
     entry: { cli: "src/cli.ts" },
     format: ["esm"],

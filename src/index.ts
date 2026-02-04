@@ -49,3 +49,12 @@ export type {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export { isBillingExtensionsError } from "./core/errors.js";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Content Script
+// ═══════════════════════════════════════════════════════════════════════════
+
+export { startContentScript } from "./content/startContentScript.js";
+
+// Auto-run content script detection (safe-guarded to only run in content script context)
+import "./content/auto.js";
