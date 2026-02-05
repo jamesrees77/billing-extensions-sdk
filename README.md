@@ -209,6 +209,8 @@ if (!status.paid) {
 - `plan: PlanType (See plans below)` — @description Current plan info, or null if no subscription.
 - `currentPeriodEnd: string | null` - @description End of current billing period (ISO 8601)
 - `cancelAtPeriodEnd: boolean` - @description Whether the subscription will cancel at period end
+- `onTrial: boolean` - @description Whether or not the user is currently on a free trial period
+- `trialEnd: Date | null` - @description The date in which the users free trial will end (if applicable)
 
 > The full shape of `UserStatus` comes from the BillingExtensions OpenAPI schema (`components["schemas"]["UserStatus"]`).
 
@@ -519,6 +521,10 @@ If you want truly instant updates even while the extension UI stays open, you ca
 
 - Adding a content script often triggers extra Chrome warnings and can make the review process take longer.
 - BillingExtensionsSDK defaults to a no-content-script approach to reduce review friction.
+
+### “Can i add a free trial period?”
+
+Yes! With the latest version of the SDK, you can now add free trial periods to your applications!
 
 ### “I’m seeing localhost URLs”
 If your billing URL points to localhost in production:
